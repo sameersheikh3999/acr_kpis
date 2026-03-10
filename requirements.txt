@@ -1,0 +1,6 @@
+# ACR-KPIs Performance Dashboard - Railway deployment
+fastapi>=0.100.0
+uvicorn[standard]>=0.22.0
+google-cloud-bigquery>=3.10.0
+google-auth>=2.0.0
+pydantic>=2.0.0

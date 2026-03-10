@@ -1,0 +1,10 @@
+# Railway deployment config - ACR-KPIs Performance Dashboard
+# https://docs.railway.com/guides/config-as-code
+
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "uvicorn api:app --host 0.0.0.0 --port $PORT"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

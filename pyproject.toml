@@ -1,0 +1,14 @@
+[project]
+name = "python-template"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+requires-python = ">=3.11"
+dependencies = [
+    "google-cloud-bigquery",
+    "google-auth",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2.12.5",
+    "sift-stack-py>=0.9.6",
+]

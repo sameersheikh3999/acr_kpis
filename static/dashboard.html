@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ACR-KPIs Performance Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #f1faee;
+      --surface: rgba(29,53,87,0.06);
+      --border: rgba(168,218,220,0.7);
+      --text: #1d3557;
+      --muted: #457b9d;
+      --accent: #457b9d;
+      --success: #22c55e;
+      --amber: #eab308;
+      --rose: #f43f5e;
+      --header-bg: rgba(241,250,238,0.96);
+      --card-bg: rgba(255,253,251,0.98);
+      --panel-bg: rgba(241,250,238,0.98);
+      --chart-line: #0369a1;
+      --ring-bg: rgba(29,53,87,0.12);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
+    .container { max-width: 1280px; margin: 0 auto; padding: 1rem 1.5rem; }
+    .header { position: sticky; top: 0; z-index: 40; border-bottom: 3px solid var(--border); background: var(--header-bg); backdrop-filter: blur(14px); box-shadow: 0 4px 24px rgba(29,53,87,0.08); padding-left: 2rem; padding-right: 2rem; }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; padding: 1.35rem 0; gap: 1rem; }
+    .logo { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+    .logo-icon { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #457b9d, #1d3557); display: flex; align-items: center; justify-content: center; }
+    .logo-icon svg { width: 20px; height: 20px; color: white; }
+    .logo h1 { font-family: Outfit, sans-serif; font-weight: 600; font-size: 1.15rem; margin: 0; letter-spacing: 0.01em; }
+    .logo p { color: var(--muted); font-size: 0.8rem; margin: 0.2rem 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav { display: inline-flex; align-items: center; gap: 0.5rem; }
+    .nav-wrap { display: inline-flex; gap: 0.25rem; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
+    .nav-btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; background: transparent; color: var(--muted); border: none; cursor: pointer; }
+    .nav-btn:hover { color: var(--text); background: var(--surface); }
+    .nav-btn.active { background: var(--surface); color: var(--text); }
+    .nav-select { padding: 0.5rem 2rem 0.5rem 0.75rem; border-radius: 14px; font-size: 0.875rem; font-weight: 500; border: 3px solid transparent; cursor: pointer; min-width: 180px; font-family: inherit; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23457b9d' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E"), linear-gradient(var(--surface), var(--surface)), linear-gradient(135deg, #457b9d, #a8dadc); background-repeat: no-repeat, repeat, repeat; background-position: right 0.5rem center, 0 0, 0 0; background-origin: padding-box, padding-box, border-box; background-clip: padding-box, padding-box, border-box; background-size: 12px 12px, 100% 100%, 100% 100%; color: var(--text); box-shadow: 0 0 0 1px rgba(69,123,157,0.3), 0 4px 12px rgba(69,123,157,0.12); }
+    .nav-select option { background: #fff; color: #111; }
+    .nav-select:hover { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(69,123,157,0.2); }
+    .nav-select:focus { outline: none; box-shadow: 0 0 0 3px var(--accent), 0 6px 20px rgba(69,123,157,0.25); }
+    .content-nav-wrap { margin-bottom: 1rem; width: 100%; }
+    .content-nav-wrap .content-nav { display: flex; width: 100%; padding: 6px; border-radius: 1rem; gap: 0.5rem; }
+    .content-nav-wrap .nav-btn { flex: 1; padding: 0.75rem 1.5rem; font-size: 1rem; font-weight: 700; min-width: 0; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .stats.stats--overview { padding: 1.5rem; border-radius: 1.25rem; border: 3px solid transparent; background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box, linear-gradient(135deg, #457b9d, #a8dadc) border-box; box-shadow: 0 4px 24px rgba(29,53,87,0.08), 0 0 20px rgba(69,123,157,0.1); margin-bottom: 2rem; }
+    .stats.stats--sector { padding: 1.5rem; border-radius: 1.25rem; border: 3px solid transparent; background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box, linear-gradient(135deg, #457b9d, #a8dadc) border-box; box-shadow: 0 4px 24px rgba(29,53,87,0.08), 0 0 16px rgba(69,123,157,0.08); margin-bottom: 2rem; }
+    .stats.stats--sector .stat-card { background: #f8fafc; border: 1px solid rgba(168,218,220,0.6); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .teacher-level-view .stats.stats--sector { background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box, linear-gradient(135deg, #457b9d, #a8dadc) border-box; box-shadow: 0 4px 24px rgba(29,53,87,0.08), 0 0 16px rgba(69,123,157,0.08); }
+    .teacher-level-view .teacher-card { background: #f8f8f8; border-color: #d4efd7; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .teacher-level-view .teacher-card:hover { border-color: #4caf50; box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+    .stat-card { border-radius: 1rem; border: 1px solid var(--border); background: rgba(255,255,255,0.9); padding: 1.25rem 1.4rem; box-shadow: 0 4px 16px rgba(29,53,87,0.06); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 120px; color: var(--text); }
+    .stat-card .label { color: var(--muted); font-size: 0.875rem; margin-bottom: 0.25rem; }
+    .stat-card .value { font-family: Outfit, sans-serif; font-size: 1.875rem; font-weight: 600; color: var(--text); }
+    .stat-card.health-strong .value { color: var(--text); }
+    .stat-card.health-moderate .value { color: var(--text); }
+    .stat-card.health-weak .value { color: var(--text); }
+    .stat-card-caption { font-size: 0.65rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.3; }
+    .charts { display: grid; grid-template-columns: repeat(1, minmax(0, 1fr)); gap: 1rem; margin-bottom: 2rem; align-items: stretch; max-width: 100%; }
+    .reports-section { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 2rem; }
+    .section-heading, .reports-section h2 { font-family: Outfit, sans-serif; font-size: 1.1rem; font-weight: 600; color: var(--muted); padding: 0.75rem 0 0.35rem 0; margin: 1.25rem 0 0.4rem 0; }
+    .section-heading:first-child { margin-top: 0; }
+    .sectors-heading { margin-bottom: 0; }
+    .reports-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: stretch; }
+    .chart-card { border-radius: 1rem; border: 1px solid var(--border); background: var(--card-bg); padding: 1rem 1.25rem 1.1rem; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(29,53,87,0.06); margin-bottom: 1.25rem; }
+    .chart-title { font-family: Outfit, sans-serif; font-size: 0.95rem; font-weight: 500; color: var(--muted); margin-bottom: 0.5rem; }
+    .chart-caption { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; }
+    .chart-bar-tooltip { position: fixed; padding: 0.35rem 0.6rem; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.75rem; color: var(--text); white-space: nowrap; pointer-events: none; z-index: 60; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.15s; }
+    .chart-bar-tooltip.visible { opacity: 1; }
+    .chart-label-muted { fill: var(--text); font-weight: 500; }
+    .chart-label-text { fill: var(--text); }
+    .chart-bar-pct-label { fill: #fff; font-weight: bold; }
+    .chart-polyline { fill: none; stroke: var(--chart-line); stroke-width: 1.5; stroke-opacity: 0.75; }
+    .teacher-ring .ring-bg { stroke: #e0e0e0; }
+    .teacher-ring .teacher-ring-text { fill: #333333; font-family: Outfit, sans-serif; font-weight: 600; font-size: 8px; text-anchor: middle; }
+    .chart-legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    .chart-legend--compact { gap: 0.2rem; margin-top: 0.35rem; }
+    .chart-pill { padding: 0.25rem 0.5rem; border-radius: 999px; background: rgba(168,218,220,0.25); font-size: 0.75rem; color: var(--muted); }
+    .chart-pill--compact { padding: 0.12rem 0.28rem; border-radius: 6px; font-size: 0.6rem; font-weight: 500; line-height: 1.2; }
+    .sectors { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; padding: 1.5rem 0; background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(69,123,157,0.06), transparent 50%), radial-gradient(ellipse 60% 40% at 80% 100%, rgba(168,218,220,0.08), transparent 45%); }
+    @media (max-width: 900px) { .sectors { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .sectors { grid-template-columns: 1fr; } }
+    .sector-block { flex: 1 1 auto; max-width: 100%; }
+    .sector-block { border-radius: 1.25rem; border: 3px solid transparent; overflow: hidden; min-height: 100px; display: flex; flex-direction: column; align-items: stretch; background: linear-gradient(var(--card-bg), var(--card-bg)) padding-box, linear-gradient(135deg, #457b9d, #a8dadc) border-box; box-shadow: 0 4px 24px rgba(29,53,87,0.08), 0 0 0 1px rgba(69,123,157,0.2); transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: pointer; }
+    .sector-block:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 12px 32px rgba(29,53,87,0.12), 0 0 24px rgba(69,123,157,0.15), 0 0 32px rgba(168,218,220,0.2); }
+    .sector-header { display: flex; flex-direction: row; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; width: 100%; flex: 1; transition: background 0.2s; border-radius: 1.1rem; }
+    .sector-block:hover .sector-header { background: linear-gradient(135deg, rgba(69,123,157,0.06), rgba(168,218,220,0.08)); }
+    .sector-header-left { display: flex; align-items: center; gap: 1rem; min-width: 0; }
+    .sector-badge { width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-family: Outfit; font-weight: 700; font-size: 1rem; border: 2px solid; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.2s, box-shadow 0.2s; }
+    .sector-block:hover .sector-badge { transform: scale(1.05); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+    .sector-badge.strong { color: var(--success); background: linear-gradient(145deg, rgba(34,197,94,0.35), rgba(34,197,94,0.15)); border-color: rgba(34,197,94,0.5); }
+    .sector-badge.moderate { color: var(--amber); background: linear-gradient(145deg, rgba(234,179,8,0.35), rgba(234,179,8,0.15)); border-color: rgba(234,179,8,0.5); }
+    .sector-badge.weak { color: var(--rose); background: linear-gradient(145deg, rgba(244,63,94,0.35), rgba(244,63,94,0.15)); border-color: rgba(244,63,94,0.5); }
+    .sector-block { position: relative; }
+    .sector-top-badge { position: absolute; top: 0.5rem; right: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 8px; font-family: Outfit, sans-serif; font-weight: 700; font-size: 0.75rem; line-height: 1.2; z-index: 2; }
+    .sector-top-badge.top-1 { background: #c2410c; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .sector-top-badge.top-2 { background: #ea580c; color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .sector-top-badge.top-3 { background: #eab308; color: #1d3557; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    .sector-name { font-family: Outfit; font-weight: 700; font-size: 1.05rem; color: var(--text); letter-spacing: 0.02em; }
+    .sector-meta { color: var(--muted); font-size: 0.875rem; margin-top: 0.2rem; }
+    .sector-block-footer { margin-top: auto; padding-top: 0.75rem; padding-bottom: 1rem; border-top: 1px solid var(--border); text-align: center; }
+    .sector-block-footer .view-schools { font-size: 0.875rem; font-weight: 600; color: var(--accent); }
+    .sector-block:hover .sector-block-footer .view-schools { color: var(--chart-line); }
+    .sector-teachers { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.75rem; padding: 1rem; border-top: 1px solid var(--border); }
+    .schools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .school-block { border-radius: 1rem; border: 2px solid #d4efd7; background: #f8f8f8; padding: 1rem 1.25rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; align-items: stretch; gap: 0.75rem; min-height: 100px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .school-block:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-color: #4caf50; }
+    .school-block .school-name { font-family: Outfit, sans-serif; font-weight: 700; color: #212121; margin-bottom: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.02em; }
+    .school-block .school-meta { font-size: 0.8125rem; color: #5a7b8d; line-height: 1.5; font-weight: 500; }
+    .school-block .school-meta-line { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .school-block .school-block-footer { margin-top: auto; padding-top: 0.75rem; border-top: 1px solid #d4efd7; text-align: center; }
+    .school-block .school-block-footer .view-teachers { font-size: 0.875rem; font-weight: 600; color: #e63946; }
+    .school-block:hover .school-block-footer .view-teachers { color: #c1121f; }
+    .all-teachers-box { border-radius: 1.25rem; border: 2px dashed rgba(147, 197, 253, 0.5); background: linear-gradient(135deg, rgba(191, 219, 254, 0.5) 0%, rgba(254, 226, 226, 0.5) 100%); padding: 1.25rem 1.5rem; margin-top: 0.5rem; margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; box-shadow: 0 4px 20px rgba(147, 197, 253, 0.15); }
+    .all-teachers-box:hover { transform: translateY(-2px); background: linear-gradient(135deg, rgba(191, 219, 254, 0.65) 0%, rgba(254, 226, 226, 0.65) 100%); border-color: rgba(147, 197, 253, 0.8); box-shadow: 0 8px 28px rgba(147, 197, 253, 0.2), 0 0 20px rgba(254, 226, 226, 0.25); }
+    .all-teachers-box h3 { margin: 0 0 0.35rem 0; font-family: Outfit, sans-serif; font-size: 1.05rem; color: var(--text); }
+    .all-teachers-box p { margin: 0; font-size: 0.875rem; color: var(--muted); }
+    .breadcrumb { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--muted); margin-bottom: 1rem; }
+    .breadcrumb a, .breadcrumb span { color: var(--muted); }
+    .breadcrumb a:hover { color: var(--accent); }
+    .teacher-card { position: relative; text-align: left; padding: 1rem 1.25rem; border-radius: 1rem; border: 2px solid #d4efd7; background: #f8f8f8; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; overflow: hidden; display: flex; flex-direction: column; align-items: stretch; gap: 0.75rem; min-height: 100px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+    .teacher-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); border-color: #4caf50; }
+    .teacher-obs-count { position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.25rem 0.5rem; border-radius: 6px; color: #fff; font-family: Outfit, sans-serif; font-weight: 700; font-size: 0.8rem; line-height: 1.1; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+    .teacher-obs-count.obs-1 { background: #4caf50; }
+    .teacher-obs-count.obs-2 { background: #2563eb; }
+    .teacher-obs-count.obs-3-4 { background: #1e40af; }
+    .teacher-obs-count.obs-5-plus { background: #ea580c; }
+    .teacher-obs-count .obs-num { font-size: 1rem; letter-spacing: 0.02em; }
+    .teacher-obs-count .obs-label { font-size: 0.55rem; font-weight: 500; opacity: 0.95; text-transform: lowercase; }
+    .teacher-card-inner { display: flex; gap: 1rem; }
+    .teacher-card-footer { margin-top: auto; padding-top: 0.75rem; border-top: 1px solid #d4efd7; text-align: center; }
+    .teacher-card-footer .view-details { font-size: 0.875rem; font-weight: 600; color: #e63946; }
+    .teacher-card-footer .view-details:hover { color: #c1121f; }
+    .teacher-ring { width: 44px; min-height: 44px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+    .teacher-ring-total { font-size: 0.6rem; color: #5a7b8d; font-family: Outfit, sans-serif; font-weight: 500; line-height: 1; white-space: nowrap; }
+    .teacher-info { min-width: 0; flex: 1; }
+    .teacher-name { font-family: Outfit; font-weight: 600; color: #212121; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .teacher-school, .teacher-role { color: #5a7b8d; font-size: 0.875rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .teacher-pct { font-size: 0.875rem; font-weight: 600; margin-top: 0.25rem; color: #333333; }
+    .teacher-pct.high { color: #4caf50; }
+    .teacher-pct.mid { color: #eab308; }
+    .teacher-pct.low { color: #e63946; }
+    .loading { min-height: 80vh; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 1rem; }
+    .spinner { width: 40px; height: 40px; border: 2px solid rgba(69,123,157,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .refresh-progress { position: fixed; top: 0; left: 0; right: 0; height: 4px; background: rgba(0,0,0,0.1); z-index: 100; overflow: hidden; }
+    .refresh-progress-bar { height: 100%; width: 40%; background: linear-gradient(90deg, #0d9488, #06b6d4, #0ea5e9); animation: refresh-progress 1.2s ease-in-out infinite; }
+    @keyframes refresh-progress { 0% { transform: translateX(-100%); } 50% { transform: translateX(150%); } 100% { transform: translateX(-100%); } }
+    .error { min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 2rem; text-align: center; }
+    .error p { color: var(--rose); }
+    .back-button { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.875rem; font-weight: 700; color: #fff; background: linear-gradient(180deg, #c53030 0%, #9b2c2c 50%, #822727 100%); border: none; border-radius: 999px; padding: 0.5rem 1.25rem; cursor: pointer; transition: color 0.2s, background 0.2s, box-shadow 0.2s; font-family: inherit; box-shadow: 0 1px 2px rgba(127,29,29,0.3); }
+    .back-button:hover { color: #fff; background: linear-gradient(180deg, #e53e3e 0%, #c53030 50%, #9b2c2c 100%); box-shadow: 0 2px 4px rgba(127,29,29,0.4); }
+    .panel-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 50; transition: opacity 0.2s; }
+    .panel { position: fixed; top: 0; left: 0; right: 0; bottom: 0; width: 100vw; height: 100vh; max-width: none; min-width: 0; background: var(--panel-bg); border-left: 1px solid var(--border); box-shadow: -10px 0 40px rgba(0,0,0,0.2); z-index: 51; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease; }
+    .panel-header { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); background: var(--panel-bg); }
+    .panel-close { padding: 0.5rem; border-radius: 8px; color: var(--muted); background: none; border: none; cursor: pointer; }
+    .panel-close:hover { color: var(--text); background: var(--surface); }
+    .panel-body { flex: 1; padding: 1.5rem; display: grid; grid-template-columns: 40% 1fr; gap: 1.5rem; align-items: start; overflow-y: auto; min-height: 0; }
+    .panel-body.profile-collapsed { grid-template-columns: 52px 1fr; }
+    .panel-profile-wrap { position: relative; min-width: 0; }
+    .panel-profile-wrap.profile-collapsed .panel-profile-content { display: none; }
+    .panel-profile-wrap.profile-collapsed .panel-profile-tab { display: flex; }
+    .panel-profile-tab { display: none; position: sticky; top: 1rem; width: 52px; min-height: 120px; padding: 0.5rem; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 12px 12px 0; cursor: pointer; align-items: center; justify-content: center; box-shadow: 2px 0 8px rgba(0,0,0,0.08); }
+    .panel-profile-tab:hover { background: rgba(69, 123, 157, 0.08); }
+    .panel-profile-tab span { writing-mode: vertical-rl; text-orientation: mixed; transform: rotate(180deg); font-size: 0.75rem; font-weight: 600; color: var(--text); line-height: 1.4; letter-spacing: 0.02em; }
+    .panel-profile-tab:hover span { color: var(--accent); }
+    .panel-profile-content { min-width: 0; }
+    .panel-profile-collapse-btn { padding: 0.25rem 0.5rem; font-size: 0.7rem; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-family: inherit; }
+    .panel-profile-collapse-btn:hover { color: var(--text); background: var(--surface); }
+    .teacher-detail-page .teacher-detail-page-body { max-width: 100%; padding: 1.5rem 0; overflow-y: visible; }
+    .teacher-detail-page .panel-part { margin-bottom: 1.5rem; }
+    .panel-part { min-width: 0; margin-bottom: 0; }
+    @media (max-width: 768px) { .panel-body { grid-template-columns: 1fr; } .panel-body.profile-collapsed { grid-template-columns: 1fr; } .panel-profile-wrap.profile-collapsed .panel-profile-tab { width: 100%; min-height: auto; border-radius: 12px; } .panel-profile-tab span { writing-mode: horizontal-tb; transform: none; } .panel-part { margin-bottom: 1.5rem; } .panel-part:last-child { margin-bottom: 0; } }
+    .panel-part-title { font-family: Outfit, sans-serif; font-size: 0.875rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .panel-part-title-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
+    .panel-part-title-row .panel-part-title { margin: 0; padding-bottom: 0; border-bottom: none; }
+    .panel-breakdown-caption { font-family: Outfit, sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--muted); background: rgba(168, 218, 220, 0.2); border: 1px solid rgba(69, 123, 157, 0.3); border-radius: 999px; padding: 0.4rem 0.9rem; }
+    .panel-part-content { margin-top: 0; }
+    .panel-summary { border-radius: 1rem; border: 1px solid var(--border); background: var(--surface); padding: 1.5rem; margin-bottom: 0.75rem; }
+    .panel-summary-top { display: flex; gap: 1rem; align-items: center; }
+    .panel-summary-score { width: 80px; height: 80px; border-radius: 1rem; background: var(--surface); display: flex; align-items: center; justify-content: center; font-family: Outfit; font-size: 1.5rem; font-weight: 700; }
+    .panel-summary-score.high { color: var(--success); }
+    .panel-summary-score.mid { color: var(--amber); }
+    .panel-summary-score.low { color: var(--rose); }
+    .panel-summary h3 { margin: 0 0 0.25rem 0; font-family: Outfit; font-size: 1.25rem; }
+    .panel-summary .school, .panel-summary .role { color: var(--muted); font-size: 0.875rem; margin: 0; }
+    .profile-table { border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+    .profile-row { display: flex; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row .k { color: var(--muted); }
+    .profile-row .v { color: var(--text); text-align: right; max-width: 60%; }
+    .kpi-section { margin-top: 0; }
+    .kpi-section h4 { margin: 0 0 0.75rem 0; font-family: Outfit; font-size: 1rem; }
+    .kpi-grid { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; font-size: 0.8125rem; }
+    .kpi-grid-section-header { background: var(--surface); color: var(--text); font-family: Outfit; font-weight: 700; font-size: 0.875rem; padding: 0.6rem 0.75rem; border-bottom: 2px solid var(--border); border-left: 3px solid var(--accent); letter-spacing: 0.02em; }
+    .kpi-grid-row { display: grid; grid-template-columns: 1fr auto 2.5rem; gap: 0.5rem; align-items: center; padding: 0.4rem 0.75rem; border-bottom: 1px solid var(--border); min-height: 2rem; }
+    .kpi-grid-row:last-child { border-bottom: none; }
+    .kpi-grid-section .kpi-grid-row:last-child { border-bottom: 1px solid var(--border); }
+    .kpi-grid-section:last-child .kpi-grid-row:last-child { border-bottom: none; }
+    .kpi-grid-label { color: var(--text); min-width: 0; }
+    .kpi-bar-wrap { flex: 1; min-width: 60px; height: 6px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; }
+    .kpi-bar { height: 100%; background: var(--accent); border-radius: 4px; max-width: 100%; }
+    .kpi-row .val { width: 28px; text-align: right; color: var(--text); }
+    .kpi-grid .kpi-bar-wrap { width: 100%; max-width: 80px; }
+    .kpi-grid .kpi-grid-val { text-align: right; color: var(--text); font-weight: 500; }
+    .kpi-pie-wrap { margin-bottom: 1rem; padding: 0.75rem; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; width: 100%; box-sizing: border-box; }
+    .kpi-pie-chart { flex-shrink: 0; position: relative; }
+    .kpi-pie-chart svg { display: block; }
+    .kpi-pie-slice { cursor: pointer; transition: opacity 0.15s, filter 0.15s; }
+    .kpi-pie-slice:hover { opacity: 1; filter: brightness(1.15); }
+    .kpi-pie-slice.dimmed { opacity: 0.4; }
+    .kpi-pie-legend { display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.75rem; min-width: 0; flex: 1; }
+    .kpi-pie-legend-item { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 0.2rem 0; border-radius: 4px; transition: background 0.15s; }
+    .kpi-pie-legend-item:hover { background: var(--surface); }
+    .kpi-pie-legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .kpi-pie-legend-label { color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-pie-legend-val { color: var(--text); font-weight: 600; margin-left: auto; }
+    .kpi-pie-tooltip { position: fixed; padding: 0.4rem 0.65rem; background: var(--panel-bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.75rem; color: var(--text); white-space: nowrap; pointer-events: none; z-index: 60; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.15s; }
+    .kpi-pie-tooltip.visible { opacity: 1; }
+    .kpi-pie-counts { flex-basis: 100%; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem 1.5rem; margin-top: 0.75rem; padding: 0.6rem 0.75rem; border-top: 1px solid var(--border); border-radius: 8px; background: rgba(69, 123, 157, 0.18); font-size: 0.8125rem; }
+    .kpi-pie-count-item { display: flex; align-items: center; gap: 0.25rem; color: var(--muted); flex: 1; min-width: 0; justify-content: center; }
+    .kpi-pie-count-item strong { color: var(--text); font-family: Outfit, sans-serif; font-weight: 600; font-size: 0.875rem; }
+    .kpi-pie-chart-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; flex-shrink: 0; }
+    .kpi-pie-total-score { text-align: center; font-size: 0.75rem; color: var(--muted); }
+    .kpi-pie-total-score strong { color: var(--text); font-family: Outfit, sans-serif; font-weight: 600; }
+    .kpi-pie-percentage { text-align: center; font-size: 0.7rem; color: var(--muted); margin-top: 0.1rem; }
+    .kpi-pie-percentage strong { color: var(--text); font-family: Outfit, sans-serif; font-weight: 600; }
+    .kpi-section-bars { margin-bottom: 1.25rem; width: 100%; }
+    .kpi-section-bar-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(80px, 2fr) 4.5rem; align-items: center; gap: 0.75rem; margin-bottom: 0.6rem; font-size: 0.8125rem; }
+    .kpi-section-bar-row .kpi-section-bar-label { min-width: 0; color: var(--text); font-weight: 700; }
+    .kpi-section-bar-row .kpi-section-bar-track { width: 100%; height: 8px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; min-width: 0; }
+    .kpi-section-bar-row .kpi-section-bar-fill { height: 100%; border-radius: 4px; min-width: 2px; transition: width 0.2s; }
+    .kpi-section-bar-row .kpi-section-bar-val { font-weight: 600; color: var(--text); white-space: nowrap; text-align: right; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="loading">
+      <div class="spinner"></div>
+      <p style="color: var(--muted);">Loading dashboard…</p>
+    </div>
+  </div>
+  <script>
+    (function() {
+      const API = '/api';
+      function el(tag, attrs, ...children) {
+        const e = document.createElement(tag);
+        if (attrs && typeof attrs === 'object' && !Array.isArray(attrs)) {
+          Object.entries(attrs).forEach(([k, v]) => {
+            if (k === 'className') e.className = v;
+            else if (k === 'style' && typeof v === 'object') Object.assign(e.style, v);
+            else if (k.startsWith('on')) e.addEventListener(k.slice(2).toLowerCase(), v);
+            else if (v != null) e.setAttribute(k, v);
+          });
+        } else if (attrs) children = [attrs, ...children];
+        children.flat().forEach(c => { e.append(typeof c === 'string' ? document.createTextNode(c) : c); });
+        return e;
+      }
+      function health(pct) {
+        if (pct >= 70) return { label: 'Strong', cls: 'strong' };
+        if (pct >= 50) return { label: 'Moderate', cls: 'moderate' };
+        return { label: 'Needs attention', cls: 'weak' };
+      }
+      function pctClass(pct) {
+        if (pct >= 70) return 'high';
+        if (pct >= 50) return 'mid';
+        return 'low';
+      }
+      function ringSvg(pct, size, colorClass) {
+        const r = (size - 4) / 2;
+        const circ = 2 * Math.PI * r;
+        const stroke = (Math.min(100, Math.max(0, pct)) / 100) * circ;
+        return el('svg', { width: size, height: size, viewBox: `0 0 ${size} ${size}` }, [
+          el('circle', { cx: size/2, cy: size/2, r, fill: 'none', stroke: 'currentColor', 'stroke-width': 3, style: { color: 'rgba(255,255,255,0.1)' } }),
+          el('circle', { cx: size/2, cy: size/2, r, fill: 'none', stroke: 'currentColor', 'stroke-width': 3, 'stroke-dasharray': circ, 'stroke-dashoffset': circ - stroke, 'stroke-linecap': 'round', style: { transform: 'rotate(-90deg)', transformOrigin: '50% 50%', color: colorClass } })
+        ]);
+      }
+      function renderStats(overall, isOverview, avgScore52) {
+        if (!overall) return null;
+        const h = health(overall.avg_percentage);
+        const cards = [
+          el('div', { className: 'stat-card' }, [
+            el('div', { className: 'label' }, 'Sectors'),
+            el('div', { className: 'value' }, String(overall.sector_count))
+          ]),
+          el('div', { className: 'stat-card' }, [
+            el('div', { className: 'label' }, 'Total unique teachers'),
+            el('div', { className: 'value' }, String(overall.total_teachers))
+          ]),
+          el('div', { className: 'stat-card' }, [
+            el('div', { className: 'label' }, 'Total observations conducted'),
+            el('div', { className: 'value' }, String(overall.total_observations != null ? overall.total_observations : overall.total_teachers))
+          ]),
+          el('div', { className: 'stat-card health-' + h.cls }, [
+            el('div', { className: 'label' }, 'Avg. ACR-KPIs Performance Percentage'),
+            el('div', { className: 'value' }, Number(overall.avg_percentage).toFixed(1) + '%')
+          ])
+        ].filter(Boolean);
+        if (isOverview && avgScore52 != null) {
+          cards.push(el('div', { className: 'stat-card' }, [
+            el('div', { className: 'label' }, 'Avg. ACR-KPI Performance Score'),
+            el('div', { className: 'value' }, Number(avgScore52).toFixed(1) + '/52'),
+            el('div', { className: 'stat-card-caption' }, 'Formula: 13 × 4 = 52 as per the weightage assigned to each KPI Officially.')
+          ]));
+        }
+        return el('section', { className: 'stats' + (isOverview ? ' stats--overview' : '') }, cards);
+      }
+      function renderTeacherCard(t, onClick) {
+        const pct = Number(t.overall_percentage) || 0;
+        const c = pctClass(pct);
+        const totalScore = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(s, k) { return s + (Number(k.value) || 0); }, 0) : 0);
+        const colorMap = { high: '#4caf50', mid: '#eab308', low: '#e63946' };
+        const ring = el('div', { className: 'teacher-ring' });
+        ring.innerHTML = '';
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('width', 44); svg.setAttribute('height', 44); svg.setAttribute('viewBox', '0 0 44 44');
+        const r = 18, circ = 2 * Math.PI * r, stroke = (Math.min(100, pct) / 100) * circ;
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        bg.setAttribute('class', 'ring-bg');
+        bg.setAttribute('cx', 22); bg.setAttribute('cy', 22); bg.setAttribute('r', r); bg.setAttribute('fill', 'none'); bg.setAttribute('stroke-width', 3);
+        const fg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        fg.setAttribute('cx', 22); fg.setAttribute('cy', 22); fg.setAttribute('r', r); fg.setAttribute('fill', 'none'); fg.setAttribute('stroke', colorMap[c]); fg.setAttribute('stroke-width', 3);
+        fg.setAttribute('stroke-dasharray', circ); fg.setAttribute('stroke-dashoffset', circ - stroke); fg.setAttribute('stroke-linecap', 'round');
+        fg.style.transform = 'rotate(-90deg)'; fg.style.transformOrigin = '50% 50%';
+        var textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textEl.setAttribute('x', 22); textEl.setAttribute('y', 22); textEl.setAttribute('text-anchor', 'middle'); textEl.setAttribute('dominant-baseline', 'middle');
+        var ringPct = 52 > 0 ? (totalScore / 52) * 100 : 0;
+        textEl.setAttribute('class', 'teacher-ring-text'); textEl.textContent = ringPct.toFixed(1) + '%';
+        svg.append(bg, fg, textEl); ring.appendChild(svg);
+        ring.appendChild(el('div', { className: 'teacher-ring-total' }, totalScore.toFixed(1) + '/52'));
+        const obsCount = typeof t.observation_count === 'number' ? t.observation_count : (t.observation_count != null ? Number(t.observation_count) : 1);
+        var obsBadgeClass = 'teacher-obs-count';
+        if (obsCount >= 5) obsBadgeClass += ' obs-5-plus';
+        else if (obsCount >= 3) obsBadgeClass += ' obs-3-4';
+        else if (obsCount === 2) obsBadgeClass += ' obs-2';
+        else obsBadgeClass += ' obs-1';
+        const obsBadge = el('div', { className: obsBadgeClass, title: obsCount + ' observation(s) conducted for this teacher' }, [
+          el('span', { className: 'obs-num' }, String(obsCount)),
+          el('span', { className: 'obs-label' }, 'obs')
+        ]);
+        return el('button', { type: 'button', className: 'teacher-card', onClick: () => onClick(t) }, [
+          obsBadge,
+          el('div', { className: 'teacher-card-inner' }, [
+            ring,
+            el('div', { className: 'teacher-info' }, [
+              el('div', { className: 'teacher-name' }, t.teacher_name || 'Unknown'),
+              el('div', { className: 'teacher-school' }, t.School || '—'),
+              el('div', { className: 'teacher-role' }, t.service_designation || t.qualifications || '—')
+            ])
+          ]),
+          el('div', { className: 'teacher-card-footer' }, [
+            el('span', { className: 'view-details' }, 'Click to View Details')
+          ])
+        ]);
+      }
+      // Overview: sector card (clickable block, no inline teacher list). rank 1|2|3 shows Top badge.
+      function renderSectorCard(sector, onOpenSector, rank) {
+        const h = health(sector.avg_percentage);
+        const children = [];
+        if (rank === 1 || rank === 2 || rank === 3) {
+          children.push(el('div', { className: 'sector-top-badge top-' + rank }, 'Top ' + rank));
+        }
+        children.push(
+          el('div', { className: 'sector-header' }, [
+            el('div', { className: 'sector-header-left' }, [
+              el('div', { className: 'sector-badge ' + h.cls }, Number(sector.avg_percentage).toFixed(1) + '%'),
+              el('div', {}, [
+                el('div', { className: 'sector-name' }, sector.name),
+                el('div', { className: 'sector-meta' }, sector.teacher_count + ' teacher(s) · ' + h.label)
+              ])
+            ])
+          ]),
+          el('div', { className: 'sector-block-footer' }, [
+            el('span', { className: 'view-schools' }, 'Click to View Schools')
+          ])
+        );
+        const block = el('div', { className: 'sector-block', onClick: () => onOpenSector(sector) }, children);
+        return block;
+      }
+      var ACR_KPI_SECTIONS = [
+        { section: 'Planning & Preparation', items: [
+          { label: 'Accurate development of lesson plans' },
+          { label: 'Effective & timely delivery of planned lessons' }
+        ]},
+        { section: 'Subject Knowledge', items: [
+          { label: 'Command over core subject/content' },
+          { label: 'Effective pedagogy for content delivery' }
+        ]},
+        { section: 'Classroom Management & Student-Centric Teaching', items: [
+          { label: 'Effective use of resources (time, space, TLM)' },
+          { label: 'Activity-based teaching & learning' },
+          { label: 'Student active participation' },
+          { label: 'Initiate discussions & promote critical thinking' },
+          { label: 'Ensure equal opportunity for all learners' }
+        ]},
+        { section: 'Use of Technology', items: [
+          { label: 'Effective use & integration of technology' },
+          { label: 'Handles technology effectively and efficiently' }
+        ]},
+        { section: 'Communication Skills', items: [
+          { label: 'Verbal communication' },
+          { label: 'Non-verbal communication' }
+        ]}
+      ];
+      var KPI_PIE_COLORS = ['#3b82f6', '#22c55e', '#eab308', '#f43f5e', '#8b5cf6'];
+      function averageKpisAcrossObservations(observations) {
+        if (!observations || observations.length === 0) return null;
+        var n = observations.length;
+        var first = observations[0];
+        var kpis = first.kpis;
+        if (!kpis || kpis.length < 13) return n === 1 ? kpis : null;
+        var sums = kpis.map(function() { return 0; });
+        observations.forEach(function(obs) {
+          var ok = obs.kpis;
+          if (ok && ok.length >= 13) {
+            for (var i = 0; i < 13; i++) sums[i] += Number(ok[i] && ok[i].value != null ? ok[i].value : 0);
+          }
+        });
+        return kpis.map(function(k, i) {
+          return { name: k.name, value: n ? sums[i] / n : 0 };
+        });
+      }
+      function getSectionLevelData(kpis) {
+        if (!kpis || kpis.length < 13) return [];
+        var idx = 0;
+        return ACR_KPI_SECTIONS.map(function(s) {
+          var sum = 0, n = 0;
+          for (var i = 0; i < s.items.length; i++) {
+            var v = kpis[idx] && kpis[idx].value != null ? Number(kpis[idx].value) : 0;
+            sum += Math.min(4, Math.max(0, v));
+            n += 1;
+            idx += 1;
+          }
+          var avg = n ? sum / n : 0;
+          return { section: s.section, avg: avg, sum: sum, n: n };
+        });
+      }
+      function renderKpiPieChart(kpis) {
+        var data = getSectionLevelData(kpis);
+        if (!data.length) return null;
+        var total = data.reduce(function(a, d) { return a + d.avg; }, 0);
+        if (total <= 0) total = 1;
+        var cum = 0;
+        var size = 100;
+        var cx = size / 2, cy = size / 2, r = 44;
+        var svgNS = 'http://www.w3.org/2000/svg';
+        var svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 ' + size + ' ' + size);
+        svg.setAttribute('width', '120');
+        svg.setAttribute('height', '120');
+        svg.setAttribute('aria-label', 'ACR-KPIs section-level performance');
+        if (!window._kpiPieTooltip) {
+          window._kpiPieTooltip = el('div', { className: 'kpi-pie-tooltip' });
+          document.body.appendChild(window._kpiPieTooltip);
+        }
+        var tooltip = window._kpiPieTooltip;
+        data.forEach(function(d, i) {
+          var pct = d.avg / total;
+          var angle = cum * 360;
+          cum += pct;
+          var angleEnd = cum * 360;
+          var start = (angle - 90) * Math.PI / 180;
+          var end = (angleEnd - 90) * Math.PI / 180;
+          var x1 = cx + r * Math.cos(start);
+          var y1 = cy + r * Math.sin(start);
+          var x2 = cx + r * Math.cos(end);
+          var y2 = cy + r * Math.sin(end);
+          var large = pct > 0.5 ? 1 : 0;
+          var pathD = 'M ' + cx + ' ' + cy + ' L ' + x1 + ' ' + y1 + ' A ' + r + ' ' + r + ' 0 ' + large + ' 1 ' + x2 + ' ' + y2 + ' Z';
+          var path = document.createElementNS(svgNS, 'path');
+          path.setAttribute('d', pathD);
+          path.setAttribute('fill', KPI_PIE_COLORS[i % KPI_PIE_COLORS.length]);
+          path.setAttribute('class', 'kpi-pie-slice');
+          var sectionMax = d.n * 4;
+          path.setAttribute('data-section', d.section);
+          path.setAttribute('data-sum', d.sum.toFixed(1));
+          path.setAttribute('data-max', String(sectionMax));
+          path.setAttribute('data-pct', (d.avg / 4 * 100).toFixed(0));
+          path.addEventListener('mouseenter', function() {
+            tooltip.textContent = path.getAttribute('data-section') + ': ' + path.getAttribute('data-sum') + '/' + path.getAttribute('data-max') + ' (' + path.getAttribute('data-pct') + '%)';
+            tooltip.classList.add('visible');
+            svg.querySelectorAll('.kpi-pie-slice').forEach(function(p) {
+              if (p !== path) p.classList.add('dimmed');
+            });
+          });
+          path.addEventListener('mousemove', function(e) {
+            tooltip.style.left = (e.clientX + 10) + 'px';
+            tooltip.style.top = (e.clientY + 8) + 'px';
+          });
+          path.addEventListener('mouseleave', function() {
+            tooltip.classList.remove('visible');
+            svg.querySelectorAll('.kpi-pie-slice').forEach(function(p) { p.classList.remove('dimmed'); });
+          });
+          svg.appendChild(path);
+        });
+        var totalScore = data.reduce(function(a, d) { return a + d.sum; }, 0);
+        var totalPct = 52 > 0 ? (totalScore / 52) * 100 : 0;
+        var legend = el('div', { className: 'kpi-pie-legend' }, data.map(function(d, i) {
+          var sectionMax = d.n * 4;
+          return el('div', { className: 'kpi-pie-legend-item' }, [
+            el('span', { className: 'kpi-pie-legend-dot', style: { background: KPI_PIE_COLORS[i % KPI_PIE_COLORS.length] } }),
+            el('span', { className: 'kpi-pie-legend-label', title: d.section }, d.section.length > 22 ? d.section.slice(0, 22) + '…' : d.section),
+            el('span', { className: 'kpi-pie-legend-val' }, d.sum.toFixed(1) + '/' + sectionMax)
+          ]);
+        }));
+        var chartEl = el('div', { className: 'kpi-pie-chart' });
+        chartEl.appendChild(svg);
+        var chartWrap = el('div', { className: 'kpi-pie-chart-wrap' }, [chartEl, legend]);
+        var countsRow = el('div', { className: 'kpi-pie-counts' }, [
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total score: '), el('strong', {}, totalScore.toFixed(1) + ' / 52')]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total Percentage: '), el('strong', {}, totalPct.toFixed(1) + '%')]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'KPI sections: '), el('strong', {}, String(ACR_KPI_SECTIONS.length))]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'ACR-KPIs total: '), el('strong', {}, '13')])
+        ]);
+        return el('div', { className: 'kpi-pie-wrap' }, [chartWrap, countsRow]);
+      }
+      function renderKpiSectionBars(kpis) {
+        var data = getSectionLevelData(kpis);
+        if (!data.length) return null;
+        var totalScore = data.reduce(function(a, d) { return a + d.sum; }, 0);
+        var totalPct = 52 > 0 ? (totalScore / 52) * 100 : 0;
+        var barsEl = el('div', { className: 'kpi-section-bars' }, data.map(function(d, i) {
+          var sectionMax = d.n * 4;
+          var pct = sectionMax > 0 ? (d.sum / sectionMax) * 100 : 0;
+          var color = KPI_PIE_COLORS[i % KPI_PIE_COLORS.length];
+          return el('div', { className: 'kpi-section-bar-row' }, [
+            el('span', { className: 'kpi-section-bar-label' }, d.section.length > 50 ? d.section.slice(0, 50) + '…' : d.section),
+            el('div', { className: 'kpi-section-bar-track' }, el('div', { className: 'kpi-section-bar-fill', style: { width: pct + '%', background: color } })),
+            el('span', { className: 'kpi-section-bar-val' }, d.sum.toFixed(1) + '/' + sectionMax)
+          ]);
+        }));
+        var countsRow = el('div', { className: 'kpi-pie-counts' }, [
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total score: '), el('strong', {}, totalScore.toFixed(1) + ' / 52')]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total Percentage: '), el('strong', {}, totalPct.toFixed(1) + '%')]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'KPI sections: '), el('strong', {}, String(ACR_KPI_SECTIONS.length))]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'ACR-KPIs total: '), el('strong', {}, '13')])
+        ]);
+        return el('div', { className: 'kpi-pie-wrap' }, [barsEl, countsRow]);
+      }
+      function renderKpiGrid(kpis) {
+        if (!kpis || kpis.length < 13) return el('p', { style: { fontSize: '0.875rem', color: 'var(--muted)', margin: 0 } }, 'No KPI breakdown available.');
+        var idx = 0;
+        return el('div', { className: 'kpi-grid' }, ACR_KPI_SECTIONS.map(function(s, sectionIdx) {
+          var sectionColor = KPI_PIE_COLORS[sectionIdx % KPI_PIE_COLORS.length];
+          return el('div', { className: 'kpi-grid-section' }, [
+            el('div', { className: 'kpi-grid-section-header' }, s.section),
+            s.items.map(function(item) {
+              var k = kpis[idx];
+              idx += 1;
+              var val = k && k.value != null ? Number(k.value) : 0;
+              var pct = Math.min(4, Math.max(0, val)) / 4 * 100;
+              return el('div', { className: 'kpi-grid-row' }, [
+                el('span', { className: 'kpi-grid-label' }, item.label),
+                el('div', { className: 'kpi-bar-wrap' }, el('div', { className: 'kpi-bar', style: { width: pct + '%', background: sectionColor } })),
+                el('span', { className: 'kpi-grid-val' }, val != null ? val.toFixed(1) : '—')
+              ]);
+            })
+          ].flat());
+        }));
+      }
+      function renderTeacherDetailBody(teacher, allObservations) {
+        const rows = [
+          ['Name', teacher.teacher_name],
+          ['School', teacher.School],
+          ['Sector', teacher.Sector],
+          ['Designation', teacher.service_designation],
+          ['Qualifications', teacher.qualifications],
+          ['Gender', teacher.gender],
+          ['Joining date', teacher.joining_date],
+          ['Last promotion', teacher.last_promotion_date],
+          ['Contact', teacher.contact_number],
+          ['CNIC', teacher.cnic]
+        ].filter(([, v]) => v != null && String(v).trim());
+        var teacherObservations = [];
+        if (allObservations && allObservations.length) {
+          var uid = (teacher.user_id || teacher.User_ID || '').toString().trim();
+          if (uid) {
+            teacherObservations = allObservations.filter(function(o) { return ((o.user_id || o.User_ID || '') + '').trim() === uid; });
+          } else {
+            var nameNorm = (teacher.teacher_name || teacher.Teacher_Name || '').trim().toLowerCase().replace(/\s+/g, '');
+            if (nameNorm) {
+              teacherObservations = allObservations.filter(function(o) {
+                var n = (o.teacher_name || o.Teacher_Name || '').trim().toLowerCase().replace(/\s+/g, '');
+                return n === nameNorm;
+              });
+            }
+          }
+        }
+        if (teacherObservations.length === 0 && teacher) teacherObservations = [teacher];
+        const kpisForBreakdown = teacherObservations.length > 1
+          ? (averageKpisAcrossObservations(teacherObservations) || teacher.kpis || [])
+          : (teacher.kpis || []);
+        const breakdownCaption = teacherObservations.length > 1
+          ? 'Average across ' + teacherObservations.length + ' observations'
+          : null;
+        const trendChart = renderTeacherObservationTrendChart(teacherObservations);
+        var profileWrap = el('div', { className: 'panel-profile-wrap' });
+        var tabEl = el('div', { className: 'panel-profile-tab', title: 'Click to view profile data' }, [
+          el('span', {}, 'Click to view profile data')
+        ]);
+        var profileContent = el('div', { className: 'panel-profile-content' }, [
+          el('div', { className: 'panel-part-title-row' }, [
+            el('h3', { className: 'panel-part-title' }, 'Profile data'),
+            el('button', { type: 'button', className: 'panel-profile-collapse-btn', title: 'Hide profile' }, 'Hide')
+          ]),
+          el('div', { className: 'panel-part-content' }, [
+            el('div', { className: 'panel-summary' }, [
+              el('div', { className: 'panel-summary-top' }, [
+                el('div', {}, [
+                  el('h3', {}, teacher.teacher_name || teacher.Teacher_Name || '—'),
+                  el('p', { className: 'school' }, teacher.School || teacher.school || 'Waiting for details.'),
+                  el('p', { className: 'role' }, teacher.service_designation || teacher.qualifications || 'Waiting for details.')
+                ])
+              ])
+            ]),
+            el('div', { className: 'profile-table' }, rows.map(([k, v]) => el('div', { className: 'profile-row' }, [el('span', { className: 'k' }, k), el('span', { className: 'v' }, v)])))
+          ])
+        ]);
+        function toggleProfile(collapse) {
+          var body = profileWrap.closest('.panel-body');
+          if (collapse) {
+            profileWrap.classList.add('profile-collapsed');
+            if (body) body.classList.add('profile-collapsed');
+          } else {
+            profileWrap.classList.remove('profile-collapsed');
+            if (body) body.classList.remove('profile-collapsed');
+          }
+        }
+        tabEl.addEventListener('click', function() { toggleProfile(false); });
+        profileContent.querySelector('.panel-profile-collapse-btn').addEventListener('click', function(e) { e.stopPropagation(); toggleProfile(true); });
+        profileWrap.appendChild(tabEl);
+        profileWrap.appendChild(profileContent);
+        var bodyEl = el('div', { className: 'panel-body' }, [
+          profileWrap,
+          el('div', { className: 'panel-part' }, [
+            el('h3', { className: 'panel-part-title' }, 'Observation Score Trend'),
+            el('div', { className: 'panel-part-content' }, trendChart ? [trendChart] : [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data.')]),
+            el('div', { className: 'panel-part-title-row', style: { marginTop: '1.5rem' } }, [
+              el('h3', { className: 'panel-part-title' }, 'ACR-KPIs Breakdown'),
+              breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
+            ].filter(Boolean)),
+            el('div', { className: 'panel-part-content' }, [
+              renderKpiSectionBars(kpisForBreakdown),
+              renderKpiGrid(kpisForBreakdown)
+            ].filter(Boolean))
+          ].filter(Boolean))
+        ]);
+        profileWrap.classList.add('profile-collapsed');
+        bodyEl.classList.add('profile-collapsed');
+        return bodyEl;
+      }
+      function renderPanel(teacher, onClose, allObservations) {
+        const backdrop = el('div', { className: 'panel-backdrop', onClick: onClose });
+        const panel = el('aside', { className: 'panel' }, [
+          el('div', { className: 'panel-header' }, [
+            el('h2', { style: { margin: 0, fontFamily: 'Outfit' } }, 'Teacher Report Card'),
+            el('button', { type: 'button', className: 'panel-close', onClick: onClose, 'aria-label': 'Close' }, '✕')
+          ]),
+          renderTeacherDetailBody(teacher, allObservations)
+        ]);
+        panel.addEventListener('click', e => e.stopPropagation());
+        return el('div', {}, [backdrop, panel]);
+      }
+      function setView(htmlOrEl) {
+        const app = document.getElementById('app');
+        app.innerHTML = '';
+        app.appendChild(typeof htmlOrEl === 'string' ? document.createRange().createContextualFragment(htmlOrEl) : htmlOrEl);
+      }
+      // Color by 10-point range: 0-9, 10-19, …, 90-100
+      function colorByRange(pct) {
+        const v = Math.min(100, Math.max(0, Number(pct) || 0));
+        const band = Math.floor(v / 10) * 10;
+        const colors = {
+          0: '#dc2626',  10: '#ea580c',  20: '#d97706',  30: '#ca8a04',  40: '#eab308',
+          50: '#a3e635', 60: '#65a30d',  70: '#22c55e',  80: '#16a34a',  90: '#15803d'
+        };
+        return colors[band] || colors[0];
+      }
+      // Simple sector-level bar chart (avg % by sector), clickable to open sector detail
+      function renderSectorChart(sectors, onSelectSector) {
+        if (!sectors || !sectors.length) return null;
+        const maxPct = 100;
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const width = 360;
+        const height = 150;
+        const padding = { top: 12, right: 16, bottom: 30, left: 32 };
+        const innerW = width - padding.left - padding.right;
+        const innerH = height - padding.top - padding.bottom;
+        const barW = Math.min(30, Math.max(10, innerW / (sectors.length * 1.6)));
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', height);
+        svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        const xStep = innerW / sectors.length;
+        const linePoints = [];
+        const tooltip = el('div', { className: 'chart-bar-tooltip' }, 'Click to see details');
+        document.body.appendChild(tooltip);
+        const caption = el('div', { className: 'chart-caption' }, '');
+        sectors.forEach((s, i) => {
+          const pct = Number(s.avg_percentage) || 0;
+          const barH = (pct / maxPct) * innerH;
+          const g = document.createElementNS(svgNS, 'g');
+          const x = padding.left + i * xStep + (xStep - barW) / 2;
+          const y = padding.top + (innerH - barH);
+          const xMid = x + barW / 2;
+          const yTop = y;
+          linePoints.push(xMid + ',' + yTop);
+          const rect = document.createElementNS(svgNS, 'rect');
+          rect.setAttribute('x', x);
+          rect.setAttribute('y', y);
+          rect.setAttribute('width', barW);
+          rect.setAttribute('height', barH);
+          rect.setAttribute('rx', 3);
+          rect.setAttribute('fill', colorByRange(pct));
+          rect.setAttribute('opacity', '0.9');
+          rect.style.cursor = onSelectSector ? 'pointer' : 'default';
+          rect.addEventListener('mouseenter', function() {
+            caption.textContent = s.name + ' · ' + pct.toFixed(1) + '%';
+            tooltip.textContent = 'Click to see details';
+            tooltip.classList.add('visible');
+            const br = rect.getBoundingClientRect();
+            tooltip.style.left = Math.max(4, br.left + br.width / 2 - tooltip.offsetWidth / 2) + 'px';
+            tooltip.style.top = Math.max(4, br.top - tooltip.offsetHeight - 6) + 'px';
+          });
+          rect.addEventListener('mouseleave', function() {
+            tooltip.classList.remove('visible');
+          });
+          if (onSelectSector) {
+            rect.addEventListener('click', () => {
+              // Ensure hover tooltip is hidden immediately on click
+              tooltip.classList.remove('visible');
+              onSelectSector(s);
+            });
+          }
+          g.appendChild(rect);
+          // Percentage label above bar (theme-aware)
+          const pctLabel = document.createElementNS(svgNS, 'text');
+          pctLabel.setAttribute('class', 'chart-label-text');
+          pctLabel.setAttribute('x', xMid);
+          pctLabel.setAttribute('y', Math.max(padding.top + 8, yTop - 4));
+          pctLabel.setAttribute('font-size', '9');
+          pctLabel.setAttribute('text-anchor', 'middle');
+          pctLabel.textContent = pct.toFixed(1) + '%';
+          g.appendChild(pctLabel);
+          const label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('class', 'chart-label-muted');
+          label.setAttribute('x', x + barW / 2);
+          label.setAttribute('y', height - 4);
+          label.setAttribute('font-size', '10');
+          label.setAttribute('text-anchor', 'middle');
+          const name = (s.name || '').trim();
+          label.textContent = name.length > 10 ? name.slice(0, 10) + '…' : name || '—';
+          g.appendChild(label);
+          svg.appendChild(g);
+        });
+        if (linePoints.length > 1) {
+          const polyline = document.createElementNS(svgNS, 'polyline');
+          polyline.setAttribute('class', 'chart-polyline');
+          polyline.setAttribute('points', linePoints.join(' '));
+          svg.appendChild(polyline);
+        }
+        const ranges = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+        const legend = el('div', { className: 'chart-legend chart-legend--compact' });
+        ranges.forEach(lo => {
+          const pill = document.createElement('span');
+          pill.className = 'chart-pill chart-pill--compact';
+          pill.style.background = colorByRange(lo);
+          pill.style.color = lo >= 60 ? '#fff' : 'rgba(0,0,0,0.85)';
+          pill.style.border = 'none';
+          pill.textContent = lo === 90 ? '90-100' : lo + '-' + (lo + 9);
+          legend.appendChild(pill);
+        });
+        const wrapper = el('div', { className: 'chart-card' });
+        wrapper.appendChild(el('div', { className: 'chart-title' }, 'Sector ACR-KPIs performance'));
+        wrapper.appendChild(svg);
+        wrapper.appendChild(legend);
+        wrapper.appendChild(caption);
+        return wrapper;
+      }
+
+      // Reusable report bar chart (same template as sector chart, colour variations, no click)
+      function renderReportChart(title, data, barColors, fullWidth, twoLineLabels) {
+        if (!data || !data.length) {
+          const empty = el('div', { className: 'chart-card chart-card-report', style: fullWidth ? { gridColumn: '1 / -1' } : undefined }, [
+            el('div', { className: 'chart-title' }, title),
+            el('div', { className: 'chart-caption', style: { marginTop: '1rem', opacity: 0.8 } }, 'No cohort data available.')
+          ]);
+          return empty;
+        }
+        const maxPct = 100;
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const width = fullWidth ? 720 : 360;
+        const height = fullWidth ? (twoLineLabels ? 200 : 180) : 150;
+        const padding = { top: 14, right: 16, bottom: twoLineLabels ? 44 : 30, left: 32 };
+        const innerW = width - padding.left - padding.right;
+        const innerH = height - padding.top - padding.bottom;
+        const barW = Math.min(30, Math.max(10, innerW / (data.length * 1.6)));
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', height);
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        const xStep = innerW / data.length;
+        const linePoints = [];
+        const caption = el('div', { className: 'chart-caption' }, '');
+        data.forEach(function(d, i) {
+          const pct = Number(d.avg_percentage) || 0;
+          const barH = (pct / maxPct) * innerH;
+          const g = document.createElementNS(svgNS, 'g');
+          const x = padding.left + i * xStep + (xStep - barW) / 2;
+          const y = padding.top + (innerH - barH);
+          const xMid = x + barW / 2;
+          const yTop = y;
+          linePoints.push(xMid + ',' + yTop);
+          const rect = document.createElementNS(svgNS, 'rect');
+          rect.setAttribute('x', x);
+          rect.setAttribute('y', y);
+          rect.setAttribute('width', barW);
+          rect.setAttribute('height', barH);
+          rect.setAttribute('rx', 3);
+          const color = Array.isArray(barColors) ? (barColors[i % barColors.length] || barColors[0]) : (typeof barColors === 'function' ? barColors(pct) : '#0ea5e9');
+          rect.setAttribute('fill', color);
+          rect.setAttribute('opacity', '0.9');
+          rect.style.cursor = 'default';
+          rect.addEventListener('mouseenter', function() {
+            caption.textContent = d.name + ' · ' + pct.toFixed(1) + '% (' + d.teacher_count + ' teachers)';
+          });
+          rect.addEventListener('mouseleave', function() {
+            caption.textContent = '';
+          });
+          g.appendChild(rect);
+          // Percentage label above bar (always visible on top of bar)
+          const pctLabel = document.createElementNS(svgNS, 'text');
+          pctLabel.setAttribute('class', 'chart-label-text');
+          pctLabel.setAttribute('x', xMid);
+          pctLabel.setAttribute('y', Math.max(padding.top + 6, yTop - 5));
+          pctLabel.setAttribute('font-size', '9');
+          pctLabel.setAttribute('text-anchor', 'middle');
+          pctLabel.textContent = pct.toFixed(1) + '%';
+          g.appendChild(pctLabel);
+          const name = (d.name || '').trim();
+          if (twoLineLabels && name) {
+            var mid = Math.floor(name.length / 2);
+            var spaceIdx = name.indexOf(' ', mid);
+            if (spaceIdx === -1) spaceIdx = name.lastIndexOf(' ', mid);
+            if (spaceIdx <= 0) spaceIdx = mid;
+            var line1 = name.slice(0, spaceIdx).trim();
+            var line2 = name.slice(spaceIdx).trim();
+            if (!line2) { line2 = line1; line1 = ''; }
+            if (line1) {
+              const label1 = document.createElementNS(svgNS, 'text');
+              label1.setAttribute('class', 'chart-label-muted');
+              label1.setAttribute('x', xMid);
+              label1.setAttribute('y', height - 18);
+              label1.setAttribute('font-size', '9');
+              label1.setAttribute('text-anchor', 'middle');
+              label1.textContent = line1.length > 18 ? line1.slice(0, 18) + '…' : line1;
+              g.appendChild(label1);
+            }
+            const label2 = document.createElementNS(svgNS, 'text');
+            label2.setAttribute('class', 'chart-label-muted');
+            label2.setAttribute('x', xMid);
+            label2.setAttribute('y', height - 6);
+            label2.setAttribute('font-size', '9');
+            label2.setAttribute('text-anchor', 'middle');
+            label2.textContent = line2.length > 18 ? line2.slice(0, 18) + '…' : line2;
+            g.appendChild(label2);
+          } else {
+            const label = document.createElementNS(svgNS, 'text');
+            label.setAttribute('class', 'chart-label-muted');
+            label.setAttribute('x', xMid);
+            label.setAttribute('y', height - 4);
+            label.setAttribute('font-size', '10');
+            label.setAttribute('text-anchor', 'middle');
+            label.textContent = name.length > 10 ? name.slice(0, 10) + '…' : name || '—';
+            g.appendChild(label);
+          }
+          svg.appendChild(g);
+        });
+        if (linePoints.length > 1) {
+          const polyline = document.createElementNS(svgNS, 'polyline');
+          polyline.setAttribute('class', 'chart-polyline');
+          polyline.setAttribute('points', linePoints.join(' '));
+          svg.appendChild(polyline);
+        }
+        const wrapper = el('div', { className: 'chart-card chart-card-report', style: fullWidth ? { gridColumn: '1 / -1' } : undefined });
+        wrapper.appendChild(el('div', { className: 'chart-title' }, title));
+        wrapper.appendChild(svg);
+        wrapper.appendChild(caption);
+        return wrapper;
+      }
+
+      // Subject performance by sector: grouped bars (ENG, URDU, Math) per sector
+      function renderSectorSubjectChart(data, subjectColors) {
+        var subjectKeys = ['ENG', 'URDU', 'Math'];
+        if (!subjectColors || subjectColors.length < 3) subjectColors = ['#86efac', '#93c5fd', '#fdba74'];
+        if (!data || !data.length) {
+          return el('div', { className: 'chart-card chart-card-report', style: { gridColumn: '1 / -1' } }, [
+            el('div', { className: 'chart-title' }, 'Subject performance by sector'),
+            el('div', { className: 'chart-caption', style: { marginTop: '1rem', opacity: 0.8 } }, 'No sector or subject data available.')
+          ]);
+        }
+        var svgNS = 'http://www.w3.org/2000/svg';
+        var width = 720;
+        var height = 220;
+        var padding = { top: 20, right: 20, bottom: 44, left: 40 };
+        var innerW = width - padding.left - padding.right;
+        var innerH = height - padding.top - padding.bottom;
+        var maxPct = 100;
+        var n = data.length;
+        var sectorGap = 20;
+        var sectorW = n > 0 ? (innerW - (n - 1) * sectorGap) / n : 0;
+        var barGap = 10;
+        var barTotalW = sectorW - barGap * 2;
+        var barSlotW = barTotalW / 3;
+        var barW = Math.max(4, barSlotW * 0.58);
+        var svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', height);
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        var sepGroup = document.createElementNS(svgNS, 'g');
+        sepGroup.setAttribute('stroke', 'var(--border, #e0e0e0)');
+        sepGroup.setAttribute('stroke-width', '1');
+        for (var si = 0; si < n - 1; si++) {
+          var sx = padding.left + (si + 1) * (sectorW + sectorGap);
+          var line = document.createElementNS(svgNS, 'line');
+          line.setAttribute('x1', sx);
+          line.setAttribute('y1', padding.top);
+          line.setAttribute('x2', sx);
+          line.setAttribute('y2', height - padding.bottom);
+          sepGroup.appendChild(line);
+        }
+        svg.appendChild(sepGroup);
+        var caption = el('div', { className: 'chart-caption' }, '');
+        data.forEach(function(row, i) {
+          var sectorName = row.sector || '—';
+var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
+            subjectKeys.forEach(function(subj, j) {
+            var pct = Number(row[subj]) || 0;
+            var barH = (pct / maxPct) * innerH;
+            var x = x0 + j * (barSlotW + barGap) + (barSlotW - barW) / 2;
+            var y = padding.top + innerH - barH;
+            var g = document.createElementNS(svgNS, 'g');
+            var rect = document.createElementNS(svgNS, 'rect');
+            rect.setAttribute('x', x);
+            rect.setAttribute('y', y);
+            rect.setAttribute('width', barW);
+            rect.setAttribute('height', barH);
+            rect.setAttribute('rx', 2);
+            rect.setAttribute('fill', subjectColors[j] || subjectColors[0]);
+            rect.setAttribute('opacity', '0.9');
+            rect.style.cursor = 'default';
+            rect.addEventListener('mouseenter', function() {
+              var teachers = row[subj + '_teacher_count'] != null ? row[subj + '_teacher_count'] : 0;
+              var observations = row[subj + '_observation_count'] != null ? row[subj + '_observation_count'] : 0;
+              caption.textContent = sectorName + ' · ' + subj + ' · ' + pct.toFixed(1) + '% · ' + teachers + ' teachers · ' + observations + ' observations';
+            });
+            rect.addEventListener('mouseleave', function() { caption.textContent = ''; });
+            g.appendChild(rect);
+            var pctLabel = document.createElementNS(svgNS, 'text');
+            pctLabel.setAttribute('class', 'chart-label-text');
+            pctLabel.setAttribute('x', x + barW / 2);
+            pctLabel.setAttribute('y', Math.max(padding.top + 8, y - 3));
+            pctLabel.setAttribute('font-size', '8');
+            pctLabel.setAttribute('text-anchor', 'middle');
+            pctLabel.textContent = pct.toFixed(0) + '%';
+            g.appendChild(pctLabel);
+            svg.appendChild(g);
+          });
+          var label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('class', 'chart-label-muted');
+          label.setAttribute('x', padding.left + i * (sectorW + sectorGap) + sectorW / 2);
+          label.setAttribute('y', height - 6);
+          label.setAttribute('font-size', '12');
+          label.setAttribute('font-weight', '600');
+          label.setAttribute('fill', 'var(--text, #1e293b)');
+          label.setAttribute('text-anchor', 'middle');
+          label.textContent = (sectorName || '').length > 10 ? (sectorName || '').slice(0, 8) + '…' : sectorName || '—';
+          svg.appendChild(label);
+        });
+        var legend = el('div', { className: 'chart-legend chart-legend--compact', style: { marginTop: '0.5rem' } });
+        subjectKeys.forEach(function(subj, j) {
+          var pill = document.createElement('span');
+          pill.className = 'chart-pill chart-pill--compact';
+          pill.style.background = subjectColors[j] || subjectColors[0];
+          pill.style.color = '#fff';
+          pill.style.border = 'none';
+          pill.textContent = subj;
+          legend.appendChild(pill);
+        });
+        var wrapper = el('div', { className: 'chart-card chart-card-report', style: { gridColumn: '1 / -1' } });
+        wrapper.appendChild(el('div', { className: 'chart-title' }, 'Subject performance by sector'));
+        wrapper.appendChild(svg);
+        wrapper.appendChild(legend);
+        wrapper.appendChild(caption);
+        return wrapper;
+      }
+
+      // Date-wise observation score trend (ACR-KPIs Co-Relations)
+      function renderDateTrendChart(data) {
+        if (!data || !data.length) {
+          return el('div', { className: 'chart-card chart-card-report', style: { gridColumn: '1 / -1' } }, [
+            el('div', { className: 'chart-title' }, 'Date-wise observation score (by created_date)'),
+            el('div', { className: 'chart-caption', style: { marginTop: '1rem', opacity: 0.8 } }, 'No date data available. Ensure created_date is present in the data.')
+          ]);
+        }
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const width = 720;
+        const height = 220;
+        const padding = { top: 20, right: 20, bottom: 44, left: 40 };
+        const innerW = width - padding.left - padding.right;
+        const innerH = height - padding.top - padding.bottom;
+        const minPct = 0;
+        const maxPct = 100;
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', height);
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        svg.setAttribute('aria-label', 'Date-wise observation score trend');
+        const caption = el('div', { className: 'chart-caption' }, '');
+        const pts = data.map(function(d, i) {
+          const pct = Number(d.avg_percentage) || 0;
+          const x = padding.left + (data.length > 1 ? (i / (data.length - 1)) * innerW : innerW / 2);
+          const y = padding.top + innerH - (pct / (maxPct - minPct)) * innerH;
+          return { x, y, pct, name: d.name, count: d.teacher_count };
+        });
+        const linePoints = pts.map(p => p.x + ',' + p.y).join(' ');
+        const polyline = document.createElementNS(svgNS, 'polyline');
+        polyline.setAttribute('class', 'chart-polyline');
+        polyline.setAttribute('points', linePoints);
+        polyline.setAttribute('stroke-width', '2');
+        svg.appendChild(polyline);
+        pts.forEach(function(p) {
+          const g = document.createElementNS(svgNS, 'g');
+          const circle = document.createElementNS(svgNS, 'circle');
+          circle.setAttribute('cx', p.x);
+          circle.setAttribute('cy', p.y);
+          circle.setAttribute('r', 5);
+          circle.setAttribute('fill', 'var(--chart-line)');
+          circle.setAttribute('stroke', 'var(--bg)');
+          circle.setAttribute('stroke-width', 2);
+          circle.style.cursor = 'pointer';
+          circle.addEventListener('mouseenter', function() {
+            caption.textContent = p.name + ' · ' + p.pct.toFixed(1) + '% · ' + p.count + ' observation(s)';
+          });
+          circle.addEventListener('mouseleave', function() { caption.textContent = ''; });
+          g.appendChild(circle);
+          const label = document.createElementNS(svgNS, 'text');
+          label.setAttribute('class', 'chart-label-muted');
+          label.setAttribute('x', p.x);
+          label.setAttribute('y', height - 6);
+          label.setAttribute('font-size', '9');
+          label.setAttribute('text-anchor', 'middle');
+          const dateStr = (p.name || '').trim();
+          label.textContent = dateStr.length > 12 ? dateStr.slice(0, 10) + '…' : dateStr || '—';
+          g.appendChild(label);
+          const pctLabel = document.createElementNS(svgNS, 'text');
+          pctLabel.setAttribute('class', 'chart-label-text');
+          pctLabel.setAttribute('x', p.x);
+          pctLabel.setAttribute('y', Math.max(padding.top + 10, p.y - 8));
+          pctLabel.setAttribute('font-size', '9');
+          pctLabel.setAttribute('text-anchor', 'middle');
+          pctLabel.textContent = p.pct.toFixed(1) + '%';
+          g.appendChild(pctLabel);
+          svg.appendChild(g);
+        });
+        const wrapper = el('div', { className: 'chart-card chart-card-report', style: { gridColumn: '1 / -1' } });
+        wrapper.appendChild(el('div', { className: 'chart-title' }, 'Date-wise observation score (by created_date)'));
+        wrapper.appendChild(svg);
+        wrapper.appendChild(caption);
+        return wrapper;
+      }
+
+      // Single teacher: observation score trend by date (for panel)
+      var MONTH_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      function formatDateDDMmmYYYY(isoOrDate) {
+        if (!isoOrDate) return '';
+        var s = typeof isoOrDate === 'string' ? isoOrDate.trim().slice(0, 10) : '';
+        if (s.length < 10) return isoOrDate && typeof isoOrDate.getFullYear === 'function' ? isoOrDate.getDate() + '.' + MONTH_ABBR[isoOrDate.getMonth()] + '.' + isoOrDate.getFullYear() : '';
+        var parts = s.split('-');
+        if (parts.length !== 3) return s;
+        var day = parseInt(parts[2], 10), month = parseInt(parts[1], 10) - 1, year = parts[0];
+        if (isNaN(day) || isNaN(month) || month < 0 || month > 11) return s;
+        return day + '.' + MONTH_ABBR[month] + '.' + year;
+      }
+      function getCreatedDateStr(obs) {
+        var d = obs.created_date != null ? obs.created_date : obs.Created_Date;
+        if (d == null) { for (var k in obs) if (k && k.toLowerCase().indexOf('created') !== -1 && k.toLowerCase().indexOf('date') !== -1) { d = obs[k]; break; } }
+        if (d == null) return '';
+        if (typeof d === 'string') return d.trim().slice(0, 10);
+        if (d && typeof d.getFullYear === 'function') return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+        return String(d).slice(0, 10);
+      }
+      function getSubjectName(obs) {
+        var s = obs.subject || obs.Subject || obs.subject_name || obs.Subject_Name || obs.course || obs.Course || obs.subject_name_ur || obs.subject_name_en || '';
+        if (s != null && typeof s === 'string') return s.trim();
+        return '';
+      }
+      function getGradeName(obs) {
+        var g = obs.grade || obs.Grade || obs.grade_level || obs.Grade_Level || obs.class || obs.Class || obs.class_name || obs.grade_name || '';
+        if (g != null && typeof g === 'string') return g.trim();
+        if (g != null && typeof g === 'number') return String(g);
+        return '';
+      }
+      function renderTeacherObservationTrendChart(observations) {
+        if (!observations || observations.length === 0) return null;
+        var withDate = observations.map(function(o) {
+          var dateStr = getCreatedDateStr(o);
+          var pct = Number(o.overall_percentage) || 0;
+          var label = dateStr ? formatDateDDMmmYYYY(dateStr) : '—';
+          var subject = getSubjectName(o) || '—';
+          var grade = getGradeName(o) || '—';
+          return { name: label, rawDate: dateStr, avg_percentage: pct, subject: subject, grade: grade };
+        }).filter(function(d) { return d.rawDate; });
+        if (withDate.length === 0) return el('div', { className: 'panel-part-content' }, [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise observations available.')]);
+        withDate.sort(function(a, b) { return (a.rawDate || '').localeCompare(b.rawDate || ''); });
+        var svgNS = 'http://www.w3.org/2000/svg';
+        var width = 520;
+        var height = 290;
+        var padding = { top: 36, right: 16, bottom: 70, left: 36 };
+        var innerW = width - padding.left - padding.right;
+        var innerH = height - padding.top - padding.bottom;
+        var maxPct = 100;
+        var n = withDate.length;
+        var barW = Math.min(28, Math.max(12, (innerW / n) * 0.65));
+        var xStep = innerW / n;
+        var svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', height);
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        svg.setAttribute('aria-label', 'Teacher observation score trend');
+        var pts = withDate.map(function(d, i) {
+          var pct = Number(d.avg_percentage) || 0;
+          var barH = (pct / maxPct) * innerH;
+          var xCenter = padding.left + (i + 0.5) * xStep;
+          var barX = xCenter - barW / 2;
+          var barY = padding.top + innerH - barH;
+          var yTop = barY;
+          return { x: xCenter, y: yTop, pct: pct, name: d.name, subject: d.subject, grade: d.grade, barX: barX, barY: barY, barW: barW, barH: barH };
+        });
+        pts.forEach(function(p, i) {
+          var prevPct = i > 0 ? pts[i - 1].pct : null;
+          var trend = prevPct == null ? null : (p.pct > prevPct ? 'up' : (p.pct < prevPct ? 'down' : 'stable'));
+          var barColor = trend === 'up' ? '#15803d' : (trend === 'down' ? '#b91c1c' : 'var(--chart-line)');
+          var g = document.createElementNS(svgNS, 'g');
+          var rect = document.createElementNS(svgNS, 'rect');
+          rect.setAttribute('x', p.barX);
+          rect.setAttribute('y', p.barY);
+          rect.setAttribute('width', p.barW);
+          rect.setAttribute('height', p.barH);
+          rect.setAttribute('rx', 3);
+          rect.setAttribute('fill', barColor);
+          rect.setAttribute('opacity', '0.9');
+          g.appendChild(rect);
+          if (trend === 'up' || trend === 'down' || trend === 'stable') {
+            var ax = p.x, ay = p.barY - 18;
+            var arrowG = document.createElementNS(svgNS, 'g');
+            arrowG.setAttribute('transform', 'translate(' + ax + ',' + ay + ')');
+            var tooltipText = trend === 'up' ? 'Performance is Improving, keep it up.' : (trend === 'stable' ? 'Performance is stabilizing.' : 'Performance is decreasing, need Improvements.');
+            var titleEl = document.createElementNS(svgNS, 'title');
+            titleEl.textContent = tooltipText;
+            arrowG.appendChild(titleEl);
+            var pill = document.createElementNS(svgNS, 'ellipse');
+            pill.setAttribute('cx', 0);
+            pill.setAttribute('cy', 0);
+            pill.setAttribute('rx', 8);
+            pill.setAttribute('ry', 6);
+            pill.setAttribute('fill', trend === 'up' ? '#22c55e' : (trend === 'down' ? '#f43f5e' : '#22c55e'));
+            pill.setAttribute('opacity', '0.95');
+            pill.setAttribute('stroke', trend === 'up' ? '#16a34a' : (trend === 'down' ? '#e11d48' : '#16a34a'));
+            pill.setAttribute('stroke-width', '1');
+            arrowG.appendChild(pill);
+            if (trend === 'stable') {
+              var eqText = document.createElementNS(svgNS, 'text');
+              eqText.setAttribute('x', 0);
+              eqText.setAttribute('y', 0);
+              eqText.setAttribute('font-size', '10');
+              eqText.setAttribute('font-weight', 'bold');
+              eqText.setAttribute('text-anchor', 'middle');
+              eqText.setAttribute('dominant-baseline', 'middle');
+              eqText.setAttribute('fill', '#fff');
+              eqText.setAttribute('font-family', 'system-ui, sans-serif');
+              eqText.textContent = '=';
+              arrowG.appendChild(eqText);
+            } else {
+              var path = document.createElementNS(svgNS, 'path');
+              path.setAttribute('fill', '#fff');
+              path.setAttribute('stroke', 'none');
+              if (trend === 'up') {
+                path.setAttribute('d', 'M 0 -3.2 L 3.2 2.2 L -3.2 2.2 Z');
+              } else {
+                path.setAttribute('d', 'M 0 3.2 L 3.2 -2.2 L -3.2 -2.2 Z');
+              }
+              arrowG.appendChild(path);
+            }
+            g.appendChild(arrowG);
+          }
+          var barCx = p.barX + p.barW / 2;
+          var barCy = p.barY + p.barH / 2;
+          var pctLabel = document.createElementNS(svgNS, 'text');
+          pctLabel.setAttribute('class', 'chart-bar-pct-label');
+          pctLabel.setAttribute('x', barCx);
+          pctLabel.setAttribute('y', barCy);
+          pctLabel.setAttribute('font-size', '9');
+          pctLabel.setAttribute('text-anchor', 'middle');
+          pctLabel.setAttribute('dominant-baseline', 'middle');
+          pctLabel.setAttribute('transform', 'rotate(-90 ' + barCx + ' ' + barCy + ')');
+          pctLabel.textContent = p.pct.toFixed(1) + '%';
+          g.appendChild(pctLabel);
+          var dateLabel = document.createElementNS(svgNS, 'text');
+          dateLabel.setAttribute('class', 'chart-label-muted');
+          dateLabel.setAttribute('x', p.x);
+          dateLabel.setAttribute('y', height - 38);
+          dateLabel.setAttribute('font-size', '11');
+          dateLabel.setAttribute('text-anchor', 'middle');
+          dateLabel.textContent = (p.name.length > 12 ? p.name.slice(0, 12) + '…' : p.name);
+          g.appendChild(dateLabel);
+          var subjectLabel = document.createElementNS(svgNS, 'text');
+          subjectLabel.setAttribute('class', 'chart-label-muted');
+          subjectLabel.setAttribute('x', p.x);
+          subjectLabel.setAttribute('y', height - 24);
+          subjectLabel.setAttribute('font-size', '10');
+          subjectLabel.setAttribute('text-anchor', 'middle');
+          var subj = (p.subject || '—').length > 14 ? (p.subject || '—').slice(0, 14) + '…' : (p.subject || '—');
+          subjectLabel.textContent = subj;
+          g.appendChild(subjectLabel);
+          var gradeLabel = document.createElementNS(svgNS, 'text');
+          gradeLabel.setAttribute('class', 'chart-label-muted');
+          gradeLabel.setAttribute('x', p.x);
+          gradeLabel.setAttribute('y', height - 8);
+          gradeLabel.setAttribute('font-size', '10');
+          gradeLabel.setAttribute('text-anchor', 'middle');
+          var gradeStr = (p.grade || '').trim();
+          var gradeDisplay = gradeStr ? (!/^(grade|class)\s/i.test(gradeStr) ? 'Grade ' + gradeStr : gradeStr) : '—';
+          if (gradeDisplay.length > 12) gradeDisplay = gradeDisplay.slice(0, 12) + '…';
+          gradeLabel.textContent = gradeDisplay;
+          g.appendChild(gradeLabel);
+          svg.appendChild(g);
+        });
+        var linePoints = pts.map(function(p) { return p.x + ',' + p.y; }).join(' ');
+        if (pts.length > 1) {
+          var polyline = document.createElementNS(svgNS, 'polyline');
+          polyline.setAttribute('class', 'chart-polyline');
+          polyline.setAttribute('points', linePoints);
+          polyline.setAttribute('stroke-width', '2');
+          svg.appendChild(polyline);
+        }
+        pts.forEach(function(p) {
+          var circle = document.createElementNS(svgNS, 'circle');
+          circle.setAttribute('cx', p.x);
+          circle.setAttribute('cy', p.y);
+          circle.setAttribute('r', 3);
+          circle.setAttribute('fill', 'var(--bg)');
+          circle.setAttribute('stroke', 'var(--chart-line)');
+          circle.setAttribute('stroke-width', 1.5);
+          svg.appendChild(circle);
+        });
+        var wrap = el('div', { className: 'chart-card', style: { marginTop: '0.5rem' } });
+        wrap.appendChild(svg);
+        return wrap;
+      }
+
+      function renderDashboard(data) {
+        var dashboardData = data;
+        var currentView = 'overview';
+        var currentSectorName = null;
+        var currentSchoolName = null;
+        var currentTeacherId = null;
+        var refreshIntervalId = null;
+        var applyingFromHistory = false;
+
+        function getUrlParams() { return new URLSearchParams(window.location.search); }
+        function viewToParam() {
+          if (currentView === 'overview') return '';
+          if (currentView === 'sector') return 'sectors';
+          if (currentView === 'sectorSchools') return 'schools';
+          if (currentView === 'schoolTeachers') return 'teachers';
+          if (currentView === 'sectorDetail') return 'sector-detail';
+          if (currentView === 'teacher') return 'teacher';
+          return currentView;
+        }
+        function buildSearch() {
+          var p = [];
+          var v = viewToParam();
+          if (v) p.push('view=' + encodeURIComponent(v));
+          if (currentSectorName) p.push('sector=' + encodeURIComponent(currentSectorName));
+          if (currentSchoolName) p.push('school=' + encodeURIComponent(currentSchoolName));
+          if (currentTeacherId) p.push('id=' + encodeURIComponent(currentTeacherId));
+          return p.length ? '?' + p.join('&') : '';
+        }
+        function updateUrl(replace) {
+          if (applyingFromHistory) return;
+          var search = buildSearch();
+          var currentSearch = window.location.search || '';
+          if (search === currentSearch) return;
+          var url = window.location.pathname + search + (window.location.hash || '');
+          if (replace) history.replaceState(null, '', url);
+          else history.pushState(null, '', url);
+        }
+        function navigateTo(view, sectorName, schoolName, teacherId) {
+          sectorName = sectorName || null;
+          schoolName = schoolName || null;
+          teacherId = teacherId || null;
+          var p = ['view=' + encodeURIComponent(view)];
+          if (sectorName) p.push('sector=' + encodeURIComponent(sectorName));
+          if (schoolName) p.push('school=' + encodeURIComponent(schoolName));
+          if (teacherId) p.push('id=' + encodeURIComponent(teacherId));
+          var search = '?' + p.join('&');
+          var path = window.location.pathname + search + (window.location.hash || '');
+          history.pushState(null, '', path);
+          applyingFromHistory = true;
+          if (view === 'overview') {
+            currentView = 'overview'; currentSectorName = null; currentSchoolName = null; currentTeacherId = null;
+            renderOverview();
+          } else if (view === 'schools' && sectorName) {
+            var s = (dashboardData.sectors || []).find(function(x) { return x.name === sectorName; });
+            if (s) {
+              currentView = 'sectorSchools'; currentSectorName = sectorName; currentSchoolName = null; currentTeacherId = null;
+              renderSectorSchools(s);
+            } else {
+              currentView = 'overview'; currentSectorName = null; currentSchoolName = null; currentTeacherId = null;
+              renderOverview();
+            }
+          } else if (view === 'sector-detail' && sectorName) {
+            var s = (dashboardData.sectors || []).find(function(x) { return x.name === sectorName; });
+            if (s) {
+              currentView = 'sectorDetail'; currentSectorName = sectorName; currentSchoolName = null; currentTeacherId = null;
+              renderSectorDetail(s);
+            } else {
+              currentView = 'overview'; currentSectorName = null; currentSchoolName = null; currentTeacherId = null;
+              renderOverview();
+            }
+          } else {
+            currentView = 'overview'; currentSectorName = null; currentSchoolName = null; currentTeacherId = null;
+            renderOverview();
+          }
+          applyingFromHistory = false;
+        }
+        function renderNavDropdown() {
+          var selected = (currentView === 'overview' || currentView === 'sector') ? 'overview' : (currentSectorName || 'overview');
+          var select = document.createElement('select');
+          select.className = 'nav-select';
+          select.title = 'Go to Overview or a sector';
+          var optOverview = document.createElement('option');
+          optOverview.value = 'overview';
+          optOverview.textContent = 'Overview';
+          select.appendChild(optOverview);
+          (dashboardData.sectors || []).forEach(function(s) {
+            var o = document.createElement('option');
+            o.value = s.name;
+            o.textContent = s.name;
+            select.appendChild(o);
+          });
+          select.value = selected;
+          select.addEventListener('change', function() {
+            var v = select.value;
+            if (v === 'overview') navigateTo('overview');
+            else navigateTo('schools', v);
+          });
+          return select;
+        }
+        function applyUrlAndRender() {
+          var params = getUrlParams();
+          var view = params.get('view') || 'overview';
+          var sectorName = params.get('sector');
+          var schoolName = params.get('school');
+          applyingFromHistory = true;
+          if (view === 'overview') {
+            currentView = 'overview';
+            currentSectorName = null;
+            currentSchoolName = null;
+            renderOverview();
+          } else if (view === 'sectors') {
+            currentView = 'sector';
+            currentSectorName = null;
+            currentSchoolName = null;
+            renderBySector();
+          } else if (view === 'schools' && sectorName) {
+            var s = (dashboardData.sectors || []).find(function(x) { return x.name === sectorName; });
+            if (s) {
+              currentView = 'sectorSchools';
+              currentSectorName = sectorName;
+              currentSchoolName = null;
+              renderSectorSchools(s);
+            } else {
+              renderOverview();
+            }
+          } else if (view === 'teachers' && sectorName && schoolName) {
+            var s = (dashboardData.sectors || []).find(function(x) { return x.name === sectorName; });
+            if (s) {
+              currentView = 'schoolTeachers';
+              currentSectorName = sectorName;
+              currentSchoolName = schoolName;
+              renderSchoolTeachers(s, schoolName);
+            } else {
+              renderOverview();
+            }
+          } else if (view === 'sector-detail' && sectorName) {
+            var s = (dashboardData.sectors || []).find(function(x) { return x.name === sectorName; });
+            if (s) {
+              currentView = 'sectorDetail';
+              currentSectorName = sectorName;
+              currentSchoolName = null;
+              renderSectorDetail(s);
+            } else {
+              renderOverview();
+            }
+          } else if (view === 'teacher') {
+            var tid = params.get('id');
+            var teacher = null;
+            if (tid && dashboardData.teachers && dashboardData.teachers.length) {
+              teacher = dashboardData.teachers.find(function(t) {
+                var uid = (t.user_id != null ? t.user_id : t.User_ID != null ? t.User_ID : '').toString().trim();
+                return uid === tid.trim();
+              });
+            }
+            if (teacher) {
+              currentView = 'teacher';
+              currentTeacherId = tid;
+              renderTeacherPage(teacher);
+            } else {
+              renderOverview();
+            }
+          } else {
+            renderOverview();
+          }
+          applyingFromHistory = false;
+          updateUrl(true);
+        }
+
+        function refreshData(btn) {
+          if (btn && btn.disabled) return;
+          var progressEl = document.createElement('div');
+          progressEl.className = 'refresh-progress';
+          progressEl.innerHTML = '<div class="refresh-progress-bar"></div>';
+          document.body.appendChild(progressEl);
+          if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Refreshing…';
+          }
+          var url = API + '/dashboard?t=' + Date.now();
+          function removeProgress() {
+            if (progressEl && progressEl.parentNode) progressEl.parentNode.removeChild(progressEl);
+          }
+          fetch(url, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } })
+            .then(function(r) { return r.ok ? r.json() : Promise.reject(new Error(r.statusText)); })
+            .then(function(newData) {
+              dashboardData = newData;
+              if (currentView === 'overview') renderOverview();
+              else if (currentView === 'sector') renderBySector();
+              else if (currentView === 'sectorSchools' && currentSectorName) {
+                var s = (dashboardData.sectors || []).find(function(x) { return x.name === currentSectorName; });
+                if (s) renderSectorSchools(s);
+                else renderBySector();
+              } else if (currentView === 'schoolTeachers' && currentSectorName && currentSchoolName) {
+                var s = (dashboardData.sectors || []).find(function(x) { return x.name === currentSectorName; });
+                if (s) renderSchoolTeachers(s, currentSchoolName);
+                else renderBySector();
+              } else if (currentView === 'teacher' && currentTeacherId) {
+                var t = findTeacherById(currentTeacherId);
+                if (t) renderTeacherPage(t);
+                else renderOverview();
+              } else if (currentSectorName) {
+                var s = (dashboardData.sectors || []).find(function(x) { return x.name === currentSectorName; });
+                if (s) renderSectorDetail(s);
+                else renderBySector();
+              }
+            })
+            .catch(function(err) {
+              console.error('Refresh failed:', err);
+              if (btn) {
+                btn.textContent = 'Refresh failed';
+                btn.disabled = false;
+                setTimeout(function() { btn.textContent = 'Refresh'; }, 2000);
+              }
+            })
+            .then(removeProgress, removeProgress);
+        }
+        function findTeacherById(id) {
+          if (!id || !dashboardData.teachers || !dashboardData.teachers.length) return null;
+          var tid = (id + '').trim();
+          return dashboardData.teachers.find(function(t) {
+            var uid = (t.user_id != null ? t.user_id : t.User_ID != null ? t.User_ID : '').toString().trim();
+            return uid === tid;
+          }) || null;
+        }
+        function renderTeacherPage(teacher) {
+          currentView = 'teacher';
+          currentTeacherId = (teacher.user_id != null ? teacher.user_id : teacher.User_ID != null ? teacher.User_ID : '').toString().trim() || null;
+          var allObs = dashboardData.all_observations || dashboardData.teachers || [];
+          const backBtn = el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back');
+          const header = el('header', { className: 'header' }, [
+            el('div', { className: 'container header-inner' }, [
+              el('div', { className: 'logo' }, [
+                el('div', {}, [el('h1', {}, 'Teacher Report Card'), el('p', {}, (teacher.teacher_name || teacher.Teacher_Name || '—') + ' · ' + (teacher.School || teacher.school || '—'))])
+              ]),
+              el('nav', { className: 'nav' }, [
+                backBtn,
+                renderNavDropdown()
+              ])
+            ])
+          ]);
+          const bodyContent = renderTeacherDetailBody(teacher, allObs);
+          bodyContent.classList.add('teacher-detail-page-body');
+          const main = el('main', { className: 'container teacher-detail-page', style: { paddingTop: '1rem', paddingBottom: '2rem' } }, [bodyContent]);
+          setView(el('div', {}, [header, main]));
+          updateUrl(false);
+        }
+        const openTeacher = (t) => { renderTeacherPage(t); };
+        function renderOverview() {
+          currentView = 'overview';
+          currentSectorName = null;
+          currentSchoolName = null;
+          currentTeacherId = null;
+          const refreshBtn = el('button', { type: 'button', className: 'nav-btn', onClick: function(e) { refreshData(e.currentTarget); }, title: 'Refresh data from server' }, 'Refresh');
+          const header = el('header', { className: 'header' }, [
+            el('div', { className: 'container header-inner' }, [
+              el('div', { className: 'logo' }, [
+                el('div', {}, [el('h1', {}, 'ACR-KPIs Performance Dashboard'), el('p', {}, 'Teacher profiles & KPI performance')])
+              ]),
+              el('nav', { className: 'nav' }, [
+                refreshBtn
+              ])
+            ])
+          ]);
+          var sortedSectors = (dashboardData.sectors || []).slice().sort(function(a, b) {
+            var pa = Number(a.avg_percentage) || 0, pb = Number(b.avg_percentage) || 0;
+            return pb - pa;
+          });
+          const sectorsHeading = sortedSectors.length ? el('h2', { className: 'section-heading sectors-heading' }, 'LIST OF SECTORS') : null;
+          const sectorsOverview = sortedSectors.length
+            ? el('section', { className: 'sectors sectors--overview' }, sortedSectors.map(function(s, i) {
+                var rank = i < 3 ? i + 1 : null;
+                return renderSectorCard(s, function(sector) { return renderSectorSchools(sector); }, rank);
+              }))
+            : null;
+          const reports = dashboardData.reports || {};
+          const subjectColors = ['#22c55e', '#eab308', '#2563eb'];
+          const ageColors = ['#3b82f6', '#60a5fa', '#93c5fd', '#c4b5fd', '#94a3b8'];
+          const genderColors = ['#ec4899', '#06b6d4', '#a78bfa', '#94a3b8'];
+          const qualColors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#94a3b8'];
+          const expColors = ['#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#94a3b8'];
+          var teachersForSections = dashboardData.teachers || [];
+          var sectionReport = [];
+          for (var si = 0; si < ACR_KPI_SECTIONS.length; si++) {
+            var sec = ACR_KPI_SECTIONS[si];
+            var totalSectionSum = 0;
+            var teacherCount = 0;
+            for (var ti = 0; ti < teachersForSections.length; ti++) {
+              var kpis = teachersForSections[ti].kpis;
+              if (!kpis || kpis.length < 13) continue;
+              var idx = 0;
+              for (var i = 0; i < si; i++) idx += ACR_KPI_SECTIONS[i].items.length;
+              var sum = 0;
+              for (var j = 0; j < sec.items.length; j++) {
+                var v = kpis[idx] && kpis[idx].value != null ? Number(kpis[idx].value) : 0;
+                sum += Math.min(4, Math.max(0, v));
+                idx++;
+              }
+              totalSectionSum += sum;
+              teacherCount++;
+            }
+            var sectionMax = sec.items.length * 4;
+            var avgSum = teacherCount > 0 ? totalSectionSum / teacherCount : 0;
+            var avgPct = sectionMax > 0 ? (avgSum / sectionMax) * 100 : 0;
+            sectionReport.push({ name: sec.section, avg_percentage: Math.round(avgPct * 10) / 10, teacher_count: teacherCount });
+          }
+          const sectionPerformanceChart = renderReportChart('Overall performance by KPI section', sectionReport, KPI_PIE_COLORS, true, true);
+          const reportsGrid = el('section', { className: 'reports-grid' }, [
+            renderReportChart('ACR-KPIs performance vs Age', reports.age || [], ageColors),
+            renderReportChart('ACR-KPIs performance vs Gender', reports.gender || [], genderColors),
+            renderReportChart('ACR-KPIs performance vs Qualification', (reports.qualification || []).map(function(g) { return g.name === 'Other' ? { name: 'Unknown', avg_percentage: g.avg_percentage, teacher_count: g.teacher_count } : g; }), qualColors),
+            renderReportChart('ACR-KPIs performance vs Experience', reports.experience || [], expColors)
+          ].filter(Boolean));
+          const sectorSubjectColors = ['#86efac', '#93c5fd', '#fdba74'];
+          const sectorSubjectChart = renderSectorSubjectChart(reports.subject_by_sector || [], sectorSubjectColors);
+          const reportsSection = el('section', { className: 'reports-section' }, [
+            el('h2', { className: 'section-heading' }, 'ACR-KPIs CO-RELATIONS'),
+            sectionPerformanceChart,
+            sectorSubjectChart,
+            reportsGrid
+          ]);
+          const overviewAvgScore52 = dashboardData.teachers && dashboardData.teachers.length
+            ? dashboardData.teachers.reduce(function(s, t) {
+                var tot = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : 0);
+                return s + tot;
+              }, 0) / dashboardData.teachers.length
+            : 0;
+          const overviewHeading = el('h2', { className: 'section-heading overview-heading' }, 'OVERVIEW');
+          const main = el('main', { className: 'container', style: { paddingTop: '1.5rem', paddingBottom: '2rem' } }, [
+            overviewHeading,
+            renderStats(dashboardData.overall, true, overviewAvgScore52),
+            sectorsHeading,
+            sectorsOverview,
+            reportsSection
+          ].filter(Boolean));
+          setView(el('div', {}, [header, main]));
+          updateUrl(false);
+        }
+
+        function renderBySector() {
+          currentView = 'sector';
+          currentSectorName = null;
+          currentSchoolName = null;
+          currentTeacherId = null;
+          const backBtn = el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back');
+          const header = el('header', { className: 'header' }, [
+            el('div', { className: 'container header-inner' }, [
+              el('div', { className: 'logo' }, [
+                el('div', {}, [el('h1', {}, 'List of Sectors'), el('p', {}, 'Select a sector to view its schools')])
+              ]),
+              el('nav', { className: 'nav' }, [
+                backBtn,
+                renderNavDropdown()
+              ])
+            ])
+          ]);
+          var sortedSectorsByView = (dashboardData.sectors || []).slice().sort(function(a, b) {
+            var pa = Number(a.avg_percentage) || 0, pb = Number(b.avg_percentage) || 0;
+            return pb - pa;
+          });
+          const sectorsOverview = el('section', { className: 'sectors' }, sortedSectorsByView.map(function(s, i) {
+            var rank = i < 3 ? i + 1 : null;
+            return renderSectorCard(s, function(sector) { return renderSectorSchools(sector); }, rank);
+          }));
+          const main = el('main', { className: 'container', style: { paddingTop: '2rem', paddingBottom: '2rem' } }, [
+            sectorsOverview
+          ]);
+          setView(el('div', {}, [header, main]));
+          updateUrl(false);
+        }
+
+        function teacherKey(t) {
+          var uid = t.user_id != null && t.user_id !== '' ? t.user_id : (t.User_ID != null && t.User_ID !== '' ? t.User_ID : null);
+          if (uid != null) {
+            var n = Number(uid);
+            if (!isNaN(n)) return String(Math.floor(n));
+            return String(uid).trim();
+          }
+          return ((t.teacher_name || t.Teacher_Name || '').trim().toLowerCase().replace(/\s+/g, '')) + '|' + ((t.School || '').trim().toLowerCase());
+        }
+        function mergeTeacherGroup(group) {
+          if (!group || !group.length) return null;
+          var first = group[0];
+          var obsCount = 0;
+          var pctSum = 0;
+          var scoreSum = 0, scoreCount = 0;
+          for (var i = 0; i < group.length; i++) {
+            var t = group[i];
+            obsCount += (typeof t.observation_count === 'number' ? t.observation_count : (t.observation_count != null ? Number(t.observation_count) : 1));
+            pctSum += Number(t.overall_percentage) || 0;
+            var sc = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : null);
+            if (sc != null && !isNaN(sc)) { scoreSum += sc; scoreCount++; }
+          }
+          var merged = Object.assign({}, first);
+          merged.observation_count = obsCount;
+          merged.overall_percentage = Math.round((pctSum / group.length) * 10) / 10;
+          if (scoreCount > 0) merged.total_score_out_of_52 = Math.round((scoreSum / scoreCount) * 10) / 10;
+          if (first.kpis && first.kpis.length) {
+            merged.kpis = first.kpis.map(function(k, j) {
+              var sum = 0, n = 0;
+              for (var i = 0; i < group.length; i++) {
+                if (group[i].kpis && group[i].kpis[j] != null) { sum += Number(group[i].kpis[j].value) || 0; n++; }
+              }
+              return { name: k.name, value: n ? Math.round((sum / n) * 10) / 10 : 0 };
+            });
+          }
+          return merged;
+        }
+        function renderSectorSchools(sector) {
+          currentView = 'sectorSchools';
+          currentSectorName = sector.name;
+          currentSchoolName = null;
+          currentTeacherId = null;
+          var teachersList = sector.teachers || [];
+          var bySchool = {};
+          teachersList.forEach(function(t) {
+            var school = (t.School != null ? t.School : t.school != null ? t.school : '—').toString().trim() || '—';
+            if (!bySchool[school]) bySchool[school] = [];
+            bySchool[school].push(t);
+          });
+          var schoolNames = Object.keys(bySchool).sort();
+          function avgPct(list) {
+            if (!list || !list.length) return 0;
+            var sum = 0;
+            list.forEach(function(t) { sum += Number(t.overall_percentage) || 0; });
+            return Math.round((sum / list.length) * 10) / 10;
+          }
+          const backBtn = el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back');
+          const header = el('header', { className: 'header' }, [
+            el('div', { className: 'container header-inner' }, [
+              el('div', { className: 'logo' }, [
+                el('div', {}, [el('h1', {}, 'Schools'), el('p', {}, sector.name + ' · select a school')])
+              ]),
+              el('nav', { className: 'nav' }, [
+                backBtn,
+                renderNavDropdown()
+              ])
+            ])
+          ]);
+          var teacherCount = teachersList.length;
+          var sectorAvgPct = sector.avg_percentage != null ? Number(sector.avg_percentage) : avgPct(teachersList);
+          var sectorAvgScore52 = teacherCount ? teachersList.reduce(function(s, t) {
+            var tot = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : 0);
+            return s + tot;
+          }, 0) / teacherCount : 0;
+          var sectorHealth = health(sectorAvgPct);
+          var sectorStatsBar = el('section', { className: 'stats stats--sector' }, [
+            el('div', { className: 'stat-card' }, [
+              el('div', { className: 'label' }, 'Sector'),
+              el('div', { className: 'value' }, sector.name)
+            ]),
+            el('div', { className: 'stat-card' }, [
+              el('div', { className: 'label' }, 'Total Teacher'),
+              el('div', { className: 'value' }, String(teacherCount))
+            ]),
+            el('div', { className: 'stat-card' }, [
+              el('div', { className: 'label' }, 'Total Schools'),
+              el('div', { className: 'value' }, String(schoolNames.length))
+            ]),
+            el('div', { className: 'stat-card health-' + sectorHealth.cls }, [
+              el('div', { className: 'label' }, 'Avg. ACR-KPIs Performance Percentage'),
+              el('div', { className: 'value' }, sectorAvgPct.toFixed(1) + '%')
+            ]),
+            el('div', { className: 'stat-card' }, [
+              el('div', { className: 'label' }, 'Avg. ACR-KPI Performance Score'),
+              el('div', { className: 'value' }, sectorAvgScore52.toFixed(1) + '/52'),
+              el('div', { className: 'stat-card-caption' }, 'Formula: 13 × 4 = 52 as per the weightage assigned to each KPI Officially.')
+            ])
+          ]);
+          var allTeachersBox = el('div', { className: 'all-teachers-box', onClick: function() { renderSectorDetail(sector); } }, [
+            el('h3', {}, 'View all teachers in ' + sector.name),
+            el('p', {}, 'Open the full teacher list for this sector without selecting a school.')
+          ]);
+          var schoolCards = schoolNames.map(function(schoolName) {
+            var list = bySchool[schoolName];
+            var totalObservations = list.reduce(function(sum, t) {
+              var n = typeof t.observation_count === 'number' ? t.observation_count : (t.observation_count != null ? Number(t.observation_count) : 1);
+              return sum + n;
+            }, 0);
+            var teacherKeys = {};
+            list.forEach(function(t) { teacherKeys[teacherKey(t)] = true; });
+            var teachersObserved = Object.keys(teacherKeys).length;
+            return el('div', { className: 'school-block', onClick: function() { renderSchoolTeachers(sector, schoolName); } }, [
+              el('div', {}, [
+                el('div', { className: 'school-name' }, schoolName),
+                el('div', { className: 'school-meta' }, [
+                  el('span', { className: 'school-meta-line' }, 'Teachers Observed: ' + teachersObserved),
+                  el('span', { className: 'school-meta-line' }, 'Observations conducted: ' + totalObservations)
+                ])
+              ]),
+              el('div', { className: 'school-block-footer' }, [
+                el('span', { className: 'view-teachers' }, 'Click to View Teachers')
+              ])
+            ]);
+          });
+          var sectorSectionReport = [];
+          for (var si = 0; si < ACR_KPI_SECTIONS.length; si++) {
+            var sec = ACR_KPI_SECTIONS[si];
+            var totalSectionSum = 0;
+            var teacherCount = 0;
+            for (var ti = 0; ti < teachersList.length; ti++) {
+              var kpis = teachersList[ti].kpis;
+              if (!kpis || kpis.length < 13) continue;
+              var idx = 0;
+              for (var i = 0; i < si; i++) idx += ACR_KPI_SECTIONS[i].items.length;
+              var sum = 0;
+              for (var j = 0; j < sec.items.length; j++) {
+                var v = kpis[idx] && kpis[idx].value != null ? Number(kpis[idx].value) : 0;
+                sum += Math.min(4, Math.max(0, v));
+                idx++;
+              }
+              totalSectionSum += sum;
+              teacherCount++;
+            }
+            var sectionMax = sec.items.length * 4;
+            var avgSum = teacherCount > 0 ? totalSectionSum / teacherCount : 0;
+            var avgPct = sectionMax > 0 ? (avgSum / sectionMax) * 100 : 0;
+            sectorSectionReport.push({ name: sec.section, avg_percentage: Math.round(avgPct * 10) / 10, teacher_count: teacherCount });
+          }
+          var sectorSectionChart = renderReportChart('Sector performance by KPI section (' + sector.name + ')', sectorSectionReport, KPI_PIE_COLORS, true, true);
+          var schoolsSection = el('section', { className: 'schools-grid' }, schoolCards);
+          const main = el('main', { className: 'container', style: { paddingTop: '2rem', paddingBottom: '2rem' } }, [
+            sectorStatsBar,
+            sectorSectionChart,
+            allTeachersBox,
+            el('h2', { style: { fontFamily: 'Outfit', fontSize: '1rem', color: 'var(--muted)', marginBottom: '0.75rem' } }, 'List of Schools'),
+            schoolsSection
+          ]);
+          setView(el('div', {}, [header, main]));
+          updateUrl(false);
+        }
+
+        function renderSchoolTeachers(sector, schoolName) {
+          currentView = 'schoolTeachers';
+          currentSectorName = sector.name;
+          currentSchoolName = schoolName;
+          currentTeacherId = null;
+          var teachersList = (sector.teachers || []).filter(function(t) {
+            var s = (t.School != null ? t.School : t.school != null ? t.school : '—').toString().trim() || '—';
+            return s === schoolName;
+          });
+          var byKey = {};
+          teachersList.forEach(function(t) {
+            var k = teacherKey(t);
+            if (!byKey[k]) byKey[k] = [];
+            byKey[k].push(t);
+          });
+          var mergedTeachers = [];
+          for (var key in byKey) mergedTeachers.push(mergeTeacherGroup(byKey[key]));
+          mergedTeachers = mergedTeachers.filter(Boolean);
+          mergedTeachers.sort(function(a, b) {
+            var oa = typeof a.observation_count === 'number' ? a.observation_count : (a.observation_count != null ? Number(a.observation_count) : 0);
+            var ob = typeof b.observation_count === 'number' ? b.observation_count : (b.observation_count != null ? Number(b.observation_count) : 0);
+            return ob - oa;
+          });
+          const backBtn = el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back');
+          const header = el('header', { className: 'header' }, [
+            el('div', { className: 'container header-inner' }, [
+              el('div', { className: 'logo' }, [
+                el('div', {}, [el('h1', {}, schoolName), el('p', {}, sector.name + ' · teachers')])
+              ]),
+              el('nav', { className: 'nav' }, [
+                backBtn,
+                renderNavDropdown()
+              ])
+            ])
+          ]);
+          var teachersGrid = el('section', { className: 'sector-teachers', style: { borderTop: 'none', paddingTop: '1rem' } }, []);
+          mergedTeachers.forEach(function(t) { teachersGrid.appendChild(renderTeacherCard(t, openTeacher)); });
+          var avgPct = mergedTeachers.length ? mergedTeachers.reduce(function(s, t) { return s + (Number(t.overall_percentage) || 0); }, 0) / mergedTeachers.length : 0;
+          var avgScore52 = mergedTeachers.length ? mergedTeachers.reduce(function(s, t) {
+            var tot = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : 0);
+            return s + tot;
+          }, 0) / mergedTeachers.length : 0;
+          const schoolHeader = el('section', { className: 'stats stats--sector' }, [
+            el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'School'), el('div', { className: 'value' }, schoolName)]),
+            el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'Teachers'), el('div', { className: 'value' }, String(mergedTeachers.length))]),
+            el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'Avg. %'), el('div', { className: 'value' }, avgPct.toFixed(1) + '%')]),
+            el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'Avg. Score'), el('div', { className: 'value' }, avgScore52.toFixed(1) + '/52')])
+          ]);
+          const main = el('main', { className: 'container teacher-level-view', style: { paddingTop: '2rem', paddingBottom: '2rem' } }, [
+            schoolHeader,
+            teachersGrid
+          ]);
+          setView(el('div', {}, [header, main]));
+          updateUrl(false);
+        }
+
+        function renderSectorDetail(sector) {
+          currentView = 'sectorDetail';
+          currentSectorName = sector.name;
+          currentSchoolName = null;
+          currentTeacherId = null;
+          const backBtn = el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back');
+          const header = el('header', { className: 'header' }, [
+            el('div', { className: 'container header-inner' }, [
+              el('div', { className: 'logo' }, [
+                el('div', {}, [el('h1', {}, 'Sector Detail'), el('p', {}, sector.name + ' · teacher list')])
+              ]),
+              el('nav', { className: 'nav' }, [
+                backBtn,
+                renderNavDropdown()
+              ])
+            ])
+          ]);
+          var teachersList = sector.teachers || [];
+          var byKey = {};
+          for (var i = 0; i < teachersList.length; i++) {
+            var k = teacherKey(teachersList[i]);
+            if (!byKey[k]) byKey[k] = [];
+            byKey[k].push(teachersList[i]);
+          }
+          var mergedTeachers = [];
+          for (var key in byKey) mergedTeachers.push(mergeTeacherGroup(byKey[key]));
+          mergedTeachers = mergedTeachers.filter(Boolean);
+          mergedTeachers.sort(function(a, b) {
+            var oa = typeof a.observation_count === 'number' ? a.observation_count : (a.observation_count != null ? Number(a.observation_count) : 0);
+            var ob = typeof b.observation_count === 'number' ? b.observation_count : (b.observation_count != null ? Number(b.observation_count) : 0);
+            return ob - oa;
+          });
+          const teachersGrid = el('section', { className: 'sector-teachers', style: { borderTop: 'none', paddingTop: '0' } }, []);
+          mergedTeachers.forEach(t => teachersGrid.appendChild(renderTeacherCard(t, openTeacher)));
+          const main = el('main', { className: 'container', style: { paddingTop: '2rem', paddingBottom: '2rem' } }, [
+            teachersGrid
+          ]);
+          setView(el('div', {}, [header, main]));
+          updateUrl(false);
+        }
+
+        window.addEventListener('popstate', function() { applyUrlAndRender(); });
+        applyUrlAndRender();
+        refreshIntervalId = setInterval(refreshData, 5 * 60 * 1000);
+      }
+      console.log('[ACR Dashboard] Fetching', API + '/dashboard');
+      fetch(API + '/dashboard')
+        .then(function(r) {
+          console.log('[ACR Dashboard] Response', r.status, r.statusText, r.url);
+          return r.ok ? r.json() : Promise.reject(new Error(r.statusText));
+        })
+        .then(function(data) {
+          var teachers = (data && data.teachers) ? data.teachers.length : 0;
+          var sectors = (data && data.sectors) ? data.sectors.length : 0;
+          console.log('[ACR Dashboard] Data loaded:', teachers, 'teachers,', sectors, 'sectors', data);
+          renderDashboard(data);
+        })
+        .catch(function(err) {
+          console.error('[ACR Dashboard] Failed to load:', err.message, err);
+          setView(el('div', { className: 'error' }, [
+            el('p', {}, 'Unable to load data.'),
+            el('p', { style: { fontSize: '0.875rem', color: 'var(--muted)' } }, err.message || 'Ensure the API is running.')
+          ]));
+        });
+    })();
+  </script>
+</body>
+</html>
