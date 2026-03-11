@@ -628,7 +628,8 @@
           profileWrap,
           el('div', { className: 'panel-part' }, [
             el('h3', { className: 'panel-part-title' }, 'Observation Score Trend'),
-            el('div', { className: 'panel-part-content' }, trendChart ? [trendChart] : [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data.')]),
+            el('p', { className: 'panel-part-caption', style: { fontSize: '0.75rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' } }, 'Date-wise by Observation_date'),
+            el('div', { className: 'panel-part-content' }, trendChart ? [trendChart] : [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data (Observation_date).')]),
             el('div', { className: 'panel-part-title-row', style: { marginTop: '1.5rem' } }, [
               el('h3', { className: 'panel-part-title' }, 'ACR-KPIs Breakdown'),
               breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
@@ -986,6 +987,8 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
         wrapper.appendChild(svg);
         wrapper.appendChild(legend);
         wrapper.appendChild(caption);
+        var capNote = el('div', { className: 'chart-caption', style: { marginTop: '0.35rem', fontSize: '0.75rem', opacity: 0.85 } }, 'Average of overall_percentage (fico_kpis) by subject (ENG, URDU, Math) per sector.');
+        wrapper.appendChild(capNote);
         return wrapper;
       }
 
@@ -1076,9 +1079,9 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
         if (isNaN(day) || isNaN(month) || month < 0 || month > 11) return s;
         return day + '.' + MONTH_ABBR[month] + '.' + year;
       }
-      function getCreatedDateStr(obs) {
-        var d = obs.created_date != null ? obs.created_date : obs.Created_Date;
-        if (d == null) { for (var k in obs) if (k && k.toLowerCase().indexOf('created') !== -1 && k.toLowerCase().indexOf('date') !== -1) { d = obs[k]; break; } }
+      function getObservationDateStr(obs) {
+        var d = obs.observation_date != null ? obs.observation_date : (obs.Observation_Date != null ? obs.Observation_Date : (obs.created_date != null ? obs.created_date : obs.Created_Date));
+        if (d == null) { for (var k in obs) if (k && (k.toLowerCase().indexOf('observation') !== -1 || k.toLowerCase().indexOf('created') !== -1) && k.toLowerCase().indexOf('date') !== -1) { d = obs[k]; break; } }
         if (d == null) return '';
         if (typeof d === 'string') return d.trim().slice(0, 10);
         if (d && typeof d.getFullYear === 'function') return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
@@ -1098,14 +1101,14 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
       function renderTeacherObservationTrendChart(observations) {
         if (!observations || observations.length === 0) return null;
         var withDate = observations.map(function(o) {
-          var dateStr = getCreatedDateStr(o);
+          var dateStr = getObservationDateStr(o);
           var pct = Number(o.overall_percentage) || 0;
           var label = dateStr ? formatDateDDMmmYYYY(dateStr) : '—';
           var subject = getSubjectName(o) || '—';
           var grade = getGradeName(o) || '—';
           return { name: label, rawDate: dateStr, avg_percentage: pct, subject: subject, grade: grade };
         }).filter(function(d) { return d.rawDate; });
-        if (withDate.length === 0) return el('div', { className: 'panel-part-content' }, [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise observations available.')]);
+        if (withDate.length === 0) return el('div', { className: 'panel-part-content' }, [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise observations available (by Observation_date).')]);
         withDate.sort(function(a, b) { return (a.rawDate || '').localeCompare(b.rawDate || ''); });
         var svgNS = 'http://www.w3.org/2000/svg';
         var width = 520;

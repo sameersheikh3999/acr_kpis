@@ -415,8 +415,8 @@ def get_dashboard(response: Response):
     subject_others.sort(key=lambda g: (-g["teacher_count"], g["name"]))
     subject_report = subject_ordered + subject_others
 
-    # Subject performance per sector: one row per sector with ENG, URDU, Math (0 if no observations)
-    # Also include teacher_count and observation_count per subject for hover tooltips
+    # Subject performance per sector: average of overall_percentage (fico_kpis) by ENG, URDU, Math per sector
+    # Same format as before: one row per sector with ENG, URDU, Math bars (0 if no observations)
     subject_keys = ["ENG", "URDU", "Math"]
     subject_by_sector = []
     for sector_name, sector_teachers in sorted(by_sector.items()):
@@ -429,6 +429,7 @@ def get_dashboard(response: Response):
         row = {"sector": sector_name}
         for sk in subject_keys:
             obs_list = by_subj.get(sk, [])
+            # avg_pct uses _get_from_row(., "overall_percentage") — fico_kpis column (or alias)
             row[sk] = round(avg_pct(obs_list), 1) if obs_list else 0
             row[sk + "_teacher_count"] = len({_teacher_uid(t) for t in obs_list})
             row[sk + "_observation_count"] = len(obs_list)
