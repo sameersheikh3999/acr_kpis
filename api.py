@@ -15,8 +15,9 @@ from google.oauth2 import service_account
 # Single port for API and (when built) dashboard
 PORT = int(os.getenv("PORT", "8000"))
 
-# BigQuery table for ACR data (override with ACR_DATA_TABLE env var if needed)
-ACR_DATA_TABLE = os.getenv("ACR_DATA_TABLE", "tbproddb.dc_acr_data_updated").strip()
+# BigQuery table: now fico_kpis. Query: SELECT * FROM `tbproddb.fico_kpis`
+# Override with env ACR_DATA_TABLE if needed.
+ACR_DATA_TABLE = os.getenv("ACR_DATA_TABLE", "tbproddb.fico_kpis").strip()
 
 app = FastAPI(title="ACR-KPIs Performance Dashboard API", version="1.0.0")
 app.add_middleware(
@@ -27,35 +28,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# fico_kpis section columns (order matches dashboard sections)
 KPI_FIELDS = [
-    "accurate_lesson_planning",
-    "timely_lesson_delivery",
-    "subject_command",
-    "effective_pedagogy",
-    "effective_resource_use",
-    "activity_based_learning",
-    "student_participation",
-    "critical_thinking",
-    "inclusive_practices",
-    "technology_integration",
-    "technology_handling",
-    "verbal_communication",
-    "non_verbal_communication",
+    "planning_and_preparation",
+    "subject_knowledge",
+    "classroom_management",
+    "communication_skills",
+    "professional_development",
+    "use_of_technology",
 ]
 
-# Possible column names in BigQuery (e.g. dc_acr_data_updated) for each canonical field
+# Column name variants for tbproddb.fico_kpis (add aliases here if your column names differ).
 COLUMN_ALIASES = {
-    "user_id": ["user_id", "User_ID", "userId", "userid"],
+    "user_id": ["user_id", "User_ID", "userId", "userid", "teacher_id", "Teacher_ID"],
     "sector": ["Sector", "sector", "SECTOR"],
-    "overall_percentage": ["overall_percentage", "overall_percent", "Overall_Percentage", "OverallPercent"],
-    "created_date": ["created_date", "Created_Date", "observation_date", "Observation_Date", "date", "Date"],
-    "total_score_out_of_52": ["total_score_out_of_52", "total_score", "Total_Score_Out_Of_52", "score_out_of_52"],
-    "date_of_birth": ["date_of_birth", "Date_Of_Birth", "dob"],
-    "joining_date": ["joining_date", "Joining_Date", "join_date"],
-    "qualifications": ["qualifications", "Qualifications", "qualification"],
-    "service_designation": ["service_designation", "Service_Designation", "designation", "Designation"],
+    "overall_percentage": ["overall_percentage", "overall_percent", "Overall_Percentage", "OverallPercent", "score_percentage", "avg_score", "kpi_score", "percentage"],
+    "created_date": ["created_date", "Created_Date", "observation_date", "Observation_Date", "date", "Date", "assessment_date", "eval_date", "record_date"],
+    "total_score_out_of_52": ["total_score_out_of_52", "total_score", "Total_Score_Out_Of_52", "score_out_of_52", "score", "max_score"],
+    "total_score_out_of_60": ["total_score_out_of_60", "Total_Score_Out_Of_60", "score_out_of_60", "score_60"],
+    "date_of_birth": ["date_of_birth", "Date_Of_Birth", "dob", "DOB"],
+    "joining_date": ["joining_date", "Joining_Date", "join_date", "hire_date"],
+    "qualifications": ["qualifications", "Qualifications", "qualification", "Qualification", "education"],
+    "service_designation": ["service_designation", "Service_Designation", "designation", "Designation", "role", "title"],
     "gender": ["gender", "Gender", "GENDER"],
-    "subject": ["subject", "Subject", "subject_name", "Subject_Name", "course", "Course", "subject_name_ur", "subject_name_en"],
+    "subject": ["subject", "Subject", "subject_name", "Subject_Name", "course", "Course", "subject_name_ur", "subject_name_en", "teaching_subject"],
+    # fico_kpis KPI section columns (Planning_and_Preparation, etc.)
+    "planning_and_preparation": ["planning_and_preparation", "Planning_and_Preparation", "Planning_And_Preparation"],
+    "subject_knowledge": ["subject_knowledge", "Subject_Knowledge"],
+    "classroom_management": ["classroom_management", "Classroom_Management", "Classroom_Manag"],
+    "communication_skills": ["communication_skills", "Communication_Skills", "Communication_Skills"],
+    "professional_development": ["professional_development", "Professional_Development", "Professional_Development"],
+    "use_of_technology": ["use_of_technology", "Use_of_Technology", "Use_Of_Technology"],
 }
 
 
@@ -123,11 +126,11 @@ def get_bigquery_client() -> bigquery.Client:
     return bigquery.Client(credentials=creds, project=creds.project_id)
 
 
-NUMERIC_FIELDS = frozenset(KPI_FIELDS + ["overall_percentage", "total_score_out_of_52", "EMIS"])
+NUMERIC_FIELDS = frozenset(KPI_FIELDS + ["overall_percentage", "total_score_out_of_52", "total_score_out_of_60", "EMIS"])
 
 
 def row_to_teacher(row: dict) -> dict:
-    """Convert BigQuery row to dashboard teacher payload with kpis list. Normalizes column names for dc_acr_data_updated."""
+    """Convert BigQuery row to dashboard teacher payload with kpis list. Normalizes column names for fico_kpis."""
     normalized = _normalize_row(row)
 
     def _cell(k: str, v):
@@ -158,6 +161,7 @@ def _empty_dashboard_payload():
             "teachers_with_multiple_observations": 0,
             "teachers_with_multiple_dates": None,
             "avg_percentage": 0,
+            "avg_score_out_of_60": None,
             "sector_count": 0,
         },
         "sectors": [],
@@ -216,6 +220,12 @@ def get_dashboard(response: Response):
         vals = [float(_get_from_row(t, "overall_percentage") or 0) for t in ts]
         return sum(vals) / len(vals) if vals else 0
 
+    def avg_score_out_of_60(ts: list) -> float | None:
+        vals = [float(_get_from_row(t, "total_score_out_of_60") or 0) for t in ts if _get_from_row(t, "total_score_out_of_60") is not None]
+        if not vals:
+            return None
+        return round(sum(vals) / len(vals), 1)
+
     def _teacher_uid(teacher: dict) -> str:
         """Get teacher user_id from row (uses normalized canonical key)."""
         uid = _get_from_row(teacher, "user_id")
@@ -242,8 +252,11 @@ def get_dashboard(response: Response):
         if any(_get_from_row(t, "total_score_out_of_52") is not None for t in obs_list):
             scores = [float(_get_from_row(t, "total_score_out_of_52") or 0) for t in obs_list]
             base["total_score_out_of_52"] = round(sum(scores) / len(scores), 1)
+        if any(_get_from_row(t, "total_score_out_of_60") is not None for t in obs_list):
+            scores_60 = [float(_get_from_row(t, "total_score_out_of_60") or 0) for t in obs_list]
+            base["total_score_out_of_60"] = round(sum(scores_60) / len(scores_60), 1)
         kpis = base.get("kpis") or []
-        if kpis and len(kpis) >= 13:
+        if kpis and len(kpis) >= 6:
             for i in range(len(kpis)):
                 vals = [float((o.get("kpis") or [{}])[i].get("value", 0) if len((o.get("kpis") or [])) > i else 0) for o in obs_list]
                 kpis[i] = {"name": kpis[i]["name"], "value": round(sum(vals) / len(vals), 1)}
@@ -265,11 +278,13 @@ def get_dashboard(response: Response):
             "name": name,
             "teacher_count": len(merged_teachers),
             "avg_percentage": round(avg_pct(teachers_list), 1),
+            "avg_score_out_of_60": avg_score_out_of_60(teachers_list),
             "teachers": merged_teachers,
         })
 
     all_teachers = teachers
     overall_avg = avg_pct(all_teachers)
+    overall_avg_score_60 = avg_score_out_of_60(all_teachers)
 
     # Cohort reports: ACR-KPIs performance vs Age, Gender, Qualification, Experience
     def parse_date(s, fmt=None):
@@ -483,6 +498,7 @@ def get_dashboard(response: Response):
             "teachers_with_multiple_observations": teachers_with_multiple_observations,
             "teachers_with_multiple_dates": teachers_with_multiple_dates if date_columns else None,
             "avg_percentage": round(overall_avg, 1),
+            "avg_score_out_of_60": overall_avg_score_60,
             "sector_count": len(by_sector),
         },
         "sectors": sectors,

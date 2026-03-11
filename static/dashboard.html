@@ -279,7 +279,7 @@
           el('circle', { cx: size/2, cy: size/2, r, fill: 'none', stroke: 'currentColor', 'stroke-width': 3, 'stroke-dasharray': circ, 'stroke-dashoffset': circ - stroke, 'stroke-linecap': 'round', style: { transform: 'rotate(-90deg)', transformOrigin: '50% 50%', color: colorClass } })
         ]);
       }
-      function renderStats(overall, isOverview, avgScore52) {
+      function renderStats(overall, isOverview, avgScore60) {
         if (!overall) return null;
         const h = health(overall.avg_percentage);
         const cards = [
@@ -300,11 +300,12 @@
             el('div', { className: 'value' }, Number(overall.avg_percentage).toFixed(1) + '%')
           ])
         ].filter(Boolean);
-        if (isOverview && avgScore52 != null) {
+        var scoreVal = avgScore60 != null ? Number(avgScore60) : (overall.avg_score_out_of_60 != null ? Number(overall.avg_score_out_of_60) : null);
+        if (isOverview && scoreVal != null) {
           cards.push(el('div', { className: 'stat-card' }, [
             el('div', { className: 'label' }, 'Avg. ACR-KPI Performance Score'),
-            el('div', { className: 'value' }, Number(avgScore52).toFixed(1) + '/52'),
-            el('div', { className: 'stat-card-caption' }, 'Formula: 13 × 4 = 52 as per the weightage assigned to each KPI Officially.')
+            el('div', { className: 'value' }, scoreVal.toFixed(1) + '/60'),
+            el('div', { className: 'stat-card-caption' }, 'Average of total_score_out_of_60.')
           ]));
         }
         return el('section', { className: 'stats' + (isOverview ? ' stats--overview' : '') }, cards);
@@ -312,13 +313,15 @@
       function renderTeacherCard(t, onClick) {
         const pct = Number(t.overall_percentage) || 0;
         const c = pctClass(pct);
-        const totalScore = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(s, k) { return s + (Number(k.value) || 0); }, 0) : 0);
+        const totalScore60 = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : null;
+        const totalScore = totalScore60 != null ? totalScore60 : (t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 6 ? t.kpis.reduce(function(s, k) { return s + (Number(k.value) || 0); }, 0) : 0));
+        const scoreMax = totalScore60 != null ? 60 : (t.kpis && t.kpis.length >= 6 ? 60 : 52);
         const colorMap = { high: '#4caf50', mid: '#eab308', low: '#e63946' };
         const ring = el('div', { className: 'teacher-ring' });
         ring.innerHTML = '';
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         svg.setAttribute('width', 44); svg.setAttribute('height', 44); svg.setAttribute('viewBox', '0 0 44 44');
-        const r = 18, circ = 2 * Math.PI * r, stroke = (Math.min(100, pct) / 100) * circ;
+        const r = 18, circ = 2 * Math.PI * r, stroke = (scoreMax > 0 ? Math.min(100, (totalScore / scoreMax) * 100) : 0) / 100 * circ;
         const bg = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         bg.setAttribute('class', 'ring-bg');
         bg.setAttribute('cx', 22); bg.setAttribute('cy', 22); bg.setAttribute('r', r); bg.setAttribute('fill', 'none'); bg.setAttribute('stroke-width', 3);
@@ -328,10 +331,10 @@
         fg.style.transform = 'rotate(-90deg)'; fg.style.transformOrigin = '50% 50%';
         var textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         textEl.setAttribute('x', 22); textEl.setAttribute('y', 22); textEl.setAttribute('text-anchor', 'middle'); textEl.setAttribute('dominant-baseline', 'middle');
-        var ringPct = 52 > 0 ? (totalScore / 52) * 100 : 0;
+        var ringPct = scoreMax > 0 ? (totalScore / scoreMax) * 100 : 0;
         textEl.setAttribute('class', 'teacher-ring-text'); textEl.textContent = ringPct.toFixed(1) + '%';
         svg.append(bg, fg, textEl); ring.appendChild(svg);
-        ring.appendChild(el('div', { className: 'teacher-ring-total' }, totalScore.toFixed(1) + '/52'));
+        ring.appendChild(el('div', { className: 'teacher-ring-total' }, totalScore.toFixed(1) + '/' + scoreMax));
         const obsCount = typeof t.observation_count === 'number' ? t.observation_count : (t.observation_count != null ? Number(t.observation_count) : 1);
         var obsBadgeClass = 'teacher-obs-count';
         if (obsCount >= 5) obsBadgeClass += ' obs-5-plus';
@@ -382,42 +385,25 @@
         return block;
       }
       var ACR_KPI_SECTIONS = [
-        { section: 'Planning & Preparation', items: [
-          { label: 'Accurate development of lesson plans' },
-          { label: 'Effective & timely delivery of planned lessons' }
-        ]},
-        { section: 'Subject Knowledge', items: [
-          { label: 'Command over core subject/content' },
-          { label: 'Effective pedagogy for content delivery' }
-        ]},
-        { section: 'Classroom Management & Student-Centric Teaching', items: [
-          { label: 'Effective use of resources (time, space, TLM)' },
-          { label: 'Activity-based teaching & learning' },
-          { label: 'Student active participation' },
-          { label: 'Initiate discussions & promote critical thinking' },
-          { label: 'Ensure equal opportunity for all learners' }
-        ]},
-        { section: 'Use of Technology', items: [
-          { label: 'Effective use & integration of technology' },
-          { label: 'Handles technology effectively and efficiently' }
-        ]},
-        { section: 'Communication Skills', items: [
-          { label: 'Verbal communication' },
-          { label: 'Non-verbal communication' }
-        ]}
+        { section: 'Planning & Preparation', items: [{ label: 'Planning & Preparation' }], maxScore: 10 },
+        { section: 'Subject Knowledge', items: [{ label: 'Subject Knowledge' }], maxScore: 10 },
+        { section: 'Classroom Management', items: [{ label: 'Classroom Management' }], maxScore: 10 },
+        { section: 'Communication Skills', items: [{ label: 'Communication Skills' }], maxScore: 10 },
+        { section: 'Professional Development', items: [{ label: 'Professional Development' }], maxScore: 10 },
+        { section: 'Use of Technology', items: [{ label: 'Use of Technology' }], maxScore: 10 }
       ];
-      var KPI_PIE_COLORS = ['#3b82f6', '#22c55e', '#eab308', '#f43f5e', '#8b5cf6'];
+      var KPI_PIE_COLORS = ['#3b82f6', '#22c55e', '#eab308', '#f43f5e', '#8b5cf6', '#06b6d4'];
       function averageKpisAcrossObservations(observations) {
         if (!observations || observations.length === 0) return null;
         var n = observations.length;
         var first = observations[0];
         var kpis = first.kpis;
-        if (!kpis || kpis.length < 13) return n === 1 ? kpis : null;
+        if (!kpis || kpis.length < 6) return n === 1 ? kpis : null;
         var sums = kpis.map(function() { return 0; });
         observations.forEach(function(obs) {
           var ok = obs.kpis;
-          if (ok && ok.length >= 13) {
-            for (var i = 0; i < 13; i++) sums[i] += Number(ok[i] && ok[i].value != null ? ok[i].value : 0);
+          if (ok && ok.length >= 6) {
+            for (var i = 0; i < 6; i++) sums[i] += Number(ok[i] && ok[i].value != null ? ok[i].value : 0);
           }
         });
         return kpis.map(function(k, i) {
@@ -425,18 +411,19 @@
         });
       }
       function getSectionLevelData(kpis) {
-        if (!kpis || kpis.length < 13) return [];
+        if (!kpis || kpis.length < 6) return [];
         var idx = 0;
         return ACR_KPI_SECTIONS.map(function(s) {
           var sum = 0, n = 0;
+          var maxVal = s.maxScore != null ? s.maxScore : 4;
           for (var i = 0; i < s.items.length; i++) {
             var v = kpis[idx] && kpis[idx].value != null ? Number(kpis[idx].value) : 0;
-            sum += Math.min(4, Math.max(0, v));
+            sum += Math.min(maxVal, Math.max(0, v));
             n += 1;
             idx += 1;
           }
           var avg = n ? sum / n : 0;
-          return { section: s.section, avg: avg, sum: sum, n: n };
+          return { section: s.section, avg: avg, sum: sum, n: n, maxScore: s.maxScore };
         });
       }
       function renderKpiPieChart(kpis) {
@@ -475,11 +462,11 @@
           path.setAttribute('d', pathD);
           path.setAttribute('fill', KPI_PIE_COLORS[i % KPI_PIE_COLORS.length]);
           path.setAttribute('class', 'kpi-pie-slice');
-          var sectionMax = d.n * 4;
+          var sectionMax = d.maxScore != null ? d.maxScore : (d.n * 4);
           path.setAttribute('data-section', d.section);
           path.setAttribute('data-sum', d.sum.toFixed(1));
           path.setAttribute('data-max', String(sectionMax));
-          path.setAttribute('data-pct', (d.avg / 4 * 100).toFixed(0));
+          path.setAttribute('data-pct', (sectionMax > 0 ? (d.avg / sectionMax * 100) : 0).toFixed(0));
           path.addEventListener('mouseenter', function() {
             tooltip.textContent = path.getAttribute('data-section') + ': ' + path.getAttribute('data-sum') + '/' + path.getAttribute('data-max') + ' (' + path.getAttribute('data-pct') + '%)';
             tooltip.classList.add('visible');
@@ -498,9 +485,10 @@
           svg.appendChild(path);
         });
         var totalScore = data.reduce(function(a, d) { return a + d.sum; }, 0);
-        var totalPct = 52 > 0 ? (totalScore / 52) * 100 : 0;
+        var totalMax = data.reduce(function(a, d) { return a + (d.maxScore != null ? d.maxScore * d.n : d.n * 4); }, 0);
+        var totalPct = totalMax > 0 ? (totalScore / totalMax) * 100 : 0;
         var legend = el('div', { className: 'kpi-pie-legend' }, data.map(function(d, i) {
-          var sectionMax = d.n * 4;
+          var sectionMax = d.maxScore != null ? d.maxScore : (d.n * 4);
           return el('div', { className: 'kpi-pie-legend-item' }, [
             el('span', { className: 'kpi-pie-legend-dot', style: { background: KPI_PIE_COLORS[i % KPI_PIE_COLORS.length] } }),
             el('span', { className: 'kpi-pie-legend-label', title: d.section }, d.section.length > 22 ? d.section.slice(0, 22) + '…' : d.section),
@@ -511,10 +499,10 @@
         chartEl.appendChild(svg);
         var chartWrap = el('div', { className: 'kpi-pie-chart-wrap' }, [chartEl, legend]);
         var countsRow = el('div', { className: 'kpi-pie-counts' }, [
-          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total score: '), el('strong', {}, totalScore.toFixed(1) + ' / 52')]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total score: '), el('strong', {}, totalScore.toFixed(1) + ' / ' + totalMax)]),
           el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total Percentage: '), el('strong', {}, totalPct.toFixed(1) + '%')]),
           el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'KPI sections: '), el('strong', {}, String(ACR_KPI_SECTIONS.length))]),
-          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'ACR-KPIs total: '), el('strong', {}, '13')])
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'ACR-KPIs total: '), el('strong', {}, '6')])
         ]);
         return el('div', { className: 'kpi-pie-wrap' }, [chartWrap, countsRow]);
       }
@@ -522,9 +510,10 @@
         var data = getSectionLevelData(kpis);
         if (!data.length) return null;
         var totalScore = data.reduce(function(a, d) { return a + d.sum; }, 0);
-        var totalPct = 52 > 0 ? (totalScore / 52) * 100 : 0;
+        var totalMax = data.reduce(function(a, d) { return a + (d.maxScore != null ? d.maxScore * d.n : d.n * 4); }, 0);
+        var totalPct = totalMax > 0 ? (totalScore / totalMax) * 100 : 0;
         var barsEl = el('div', { className: 'kpi-section-bars' }, data.map(function(d, i) {
-          var sectionMax = d.n * 4;
+          var sectionMax = d.maxScore != null ? d.maxScore : (d.n * 4);
           var pct = sectionMax > 0 ? (d.sum / sectionMax) * 100 : 0;
           var color = KPI_PIE_COLORS[i % KPI_PIE_COLORS.length];
           return el('div', { className: 'kpi-section-bar-row' }, [
@@ -534,25 +523,26 @@
           ]);
         }));
         var countsRow = el('div', { className: 'kpi-pie-counts' }, [
-          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total score: '), el('strong', {}, totalScore.toFixed(1) + ' / 52')]),
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total score: '), el('strong', {}, totalScore.toFixed(1) + ' / ' + totalMax)]),
           el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'Total Percentage: '), el('strong', {}, totalPct.toFixed(1) + '%')]),
           el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'KPI sections: '), el('strong', {}, String(ACR_KPI_SECTIONS.length))]),
-          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'ACR-KPIs total: '), el('strong', {}, '13')])
+          el('div', { className: 'kpi-pie-count-item' }, [el('span', {}, 'ACR-KPIs total: '), el('strong', {}, '6')])
         ]);
         return el('div', { className: 'kpi-pie-wrap' }, [barsEl, countsRow]);
       }
       function renderKpiGrid(kpis) {
-        if (!kpis || kpis.length < 13) return el('p', { style: { fontSize: '0.875rem', color: 'var(--muted)', margin: 0 } }, 'No KPI breakdown available.');
+        if (!kpis || kpis.length < 6) return el('p', { style: { fontSize: '0.875rem', color: 'var(--muted)', margin: 0 } }, 'No KPI breakdown available.');
         var idx = 0;
         return el('div', { className: 'kpi-grid' }, ACR_KPI_SECTIONS.map(function(s, sectionIdx) {
           var sectionColor = KPI_PIE_COLORS[sectionIdx % KPI_PIE_COLORS.length];
+          var maxVal = s.maxScore != null ? s.maxScore : 4;
           return el('div', { className: 'kpi-grid-section' }, [
             el('div', { className: 'kpi-grid-section-header' }, s.section),
             s.items.map(function(item) {
               var k = kpis[idx];
               idx += 1;
               var val = k && k.value != null ? Number(k.value) : 0;
-              var pct = Math.min(4, Math.max(0, val)) / 4 * 100;
+              var pct = maxVal > 0 ? (Math.min(maxVal, Math.max(0, val)) / maxVal * 100) : 0;
               return el('div', { className: 'kpi-grid-row' }, [
                 el('span', { className: 'kpi-grid-label' }, item.label),
                 el('div', { className: 'kpi-bar-wrap' }, el('div', { className: 'kpi-bar', style: { width: pct + '%', background: sectionColor } })),
@@ -1547,23 +1537,24 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           var sectionReport = [];
           for (var si = 0; si < ACR_KPI_SECTIONS.length; si++) {
             var sec = ACR_KPI_SECTIONS[si];
+            var sectionMaxVal = sec.maxScore != null ? sec.maxScore : (sec.items.length * 4);
             var totalSectionSum = 0;
             var teacherCount = 0;
             for (var ti = 0; ti < teachersForSections.length; ti++) {
               var kpis = teachersForSections[ti].kpis;
-              if (!kpis || kpis.length < 13) continue;
+              if (!kpis || kpis.length < 6) continue;
               var idx = 0;
               for (var i = 0; i < si; i++) idx += ACR_KPI_SECTIONS[i].items.length;
               var sum = 0;
               for (var j = 0; j < sec.items.length; j++) {
                 var v = kpis[idx] && kpis[idx].value != null ? Number(kpis[idx].value) : 0;
-                sum += Math.min(4, Math.max(0, v));
+                sum += Math.min(sectionMaxVal, Math.max(0, v));
                 idx++;
               }
               totalSectionSum += sum;
               teacherCount++;
             }
-            var sectionMax = sec.items.length * 4;
+            var sectionMax = sec.items.length * (sec.maxScore != null ? sec.maxScore : 4);
             var avgSum = teacherCount > 0 ? totalSectionSum / teacherCount : 0;
             var avgPct = sectionMax > 0 ? (avgSum / sectionMax) * 100 : 0;
             sectionReport.push({ name: sec.section, avg_percentage: Math.round(avgPct * 10) / 10, teacher_count: teacherCount });
@@ -1583,16 +1574,22 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             sectorSubjectChart,
             reportsGrid
           ]);
-          const overviewAvgScore52 = dashboardData.teachers && dashboardData.teachers.length
-            ? dashboardData.teachers.reduce(function(s, t) {
-                var tot = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : 0);
-                return s + tot;
-              }, 0) / dashboardData.teachers.length
-            : 0;
+          const overviewAvgScore60 = dashboardData.overall && dashboardData.overall.avg_score_out_of_60 != null
+            ? Number(dashboardData.overall.avg_score_out_of_60)
+            : (dashboardData.teachers && dashboardData.teachers.length
+              ? (function() {
+                  var sum = 0, n = 0;
+                  dashboardData.teachers.forEach(function(t) {
+                    var v = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : null;
+                    if (v != null) { sum += v; n++; }
+                  });
+                  return n ? sum / n : null;
+                })()
+              : null);
           const overviewHeading = el('h2', { className: 'section-heading overview-heading' }, 'OVERVIEW');
           const main = el('main', { className: 'container', style: { paddingTop: '1.5rem', paddingBottom: '2rem' } }, [
             overviewHeading,
-            renderStats(dashboardData.overall, true, overviewAvgScore52),
+            renderStats(dashboardData.overall, true, overviewAvgScore60),
             sectorsHeading,
             sectorsOverview,
             reportsSection
@@ -1648,17 +1645,21 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           var obsCount = 0;
           var pctSum = 0;
           var scoreSum = 0, scoreCount = 0;
+          var score60Sum = 0, score60Count = 0;
           for (var i = 0; i < group.length; i++) {
             var t = group[i];
             obsCount += (typeof t.observation_count === 'number' ? t.observation_count : (t.observation_count != null ? Number(t.observation_count) : 1));
             pctSum += Number(t.overall_percentage) || 0;
-            var sc = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : null);
+            var sc = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 6 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : null);
             if (sc != null && !isNaN(sc)) { scoreSum += sc; scoreCount++; }
+            var s60 = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : null;
+            if (s60 != null && !isNaN(s60)) { score60Sum += s60; score60Count++; }
           }
           var merged = Object.assign({}, first);
           merged.observation_count = obsCount;
           merged.overall_percentage = Math.round((pctSum / group.length) * 10) / 10;
           if (scoreCount > 0) merged.total_score_out_of_52 = Math.round((scoreSum / scoreCount) * 10) / 10;
+          if (score60Count > 0) merged.total_score_out_of_60 = Math.round((score60Sum / score60Count) * 10) / 10;
           if (first.kpis && first.kpis.length) {
             merged.kpis = first.kpis.map(function(k, j) {
               var sum = 0, n = 0;
@@ -1703,10 +1704,14 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           ]);
           var teacherCount = teachersList.length;
           var sectorAvgPct = sector.avg_percentage != null ? Number(sector.avg_percentage) : avgPct(teachersList);
-          var sectorAvgScore52 = teacherCount ? teachersList.reduce(function(s, t) {
-            var tot = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : 0);
-            return s + tot;
-          }, 0) / teacherCount : 0;
+          var sectorAvgScore60 = sector.avg_score_out_of_60 != null ? Number(sector.avg_score_out_of_60) : (teacherCount ? (function() {
+            var sum = 0, n = 0;
+            teachersList.forEach(function(t) {
+              var v = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : null;
+              if (v != null) { sum += v; n++; }
+            });
+            return n ? sum / n : null;
+          }()) : null);
           var sectorHealth = health(sectorAvgPct);
           var sectorStatsBar = el('section', { className: 'stats stats--sector' }, [
             el('div', { className: 'stat-card' }, [
@@ -1727,8 +1732,8 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             ]),
             el('div', { className: 'stat-card' }, [
               el('div', { className: 'label' }, 'Avg. ACR-KPI Performance Score'),
-              el('div', { className: 'value' }, sectorAvgScore52.toFixed(1) + '/52'),
-              el('div', { className: 'stat-card-caption' }, 'Formula: 13 × 4 = 52 as per the weightage assigned to each KPI Officially.')
+              el('div', { className: 'value' }, sectorAvgScore60 != null ? sectorAvgScore60.toFixed(1) + '/60' : '—'),
+              el('div', { className: 'stat-card-caption' }, 'Average of total_score_out_of_60.')
             ])
           ]);
           var allTeachersBox = el('div', { className: 'all-teachers-box', onClick: function() { renderSectorDetail(sector); } }, [
@@ -1760,23 +1765,24 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           var sectorSectionReport = [];
           for (var si = 0; si < ACR_KPI_SECTIONS.length; si++) {
             var sec = ACR_KPI_SECTIONS[si];
+            var sectionMaxVal = sec.maxScore != null ? sec.maxScore : (sec.items.length * 4);
             var totalSectionSum = 0;
             var teacherCount = 0;
             for (var ti = 0; ti < teachersList.length; ti++) {
               var kpis = teachersList[ti].kpis;
-              if (!kpis || kpis.length < 13) continue;
+              if (!kpis || kpis.length < 6) continue;
               var idx = 0;
               for (var i = 0; i < si; i++) idx += ACR_KPI_SECTIONS[i].items.length;
               var sum = 0;
               for (var j = 0; j < sec.items.length; j++) {
                 var v = kpis[idx] && kpis[idx].value != null ? Number(kpis[idx].value) : 0;
-                sum += Math.min(4, Math.max(0, v));
+                sum += Math.min(sectionMaxVal, Math.max(0, v));
                 idx++;
               }
               totalSectionSum += sum;
               teacherCount++;
             }
-            var sectionMax = sec.items.length * 4;
+            var sectionMax = sec.items.length * (sec.maxScore != null ? sec.maxScore : 4);
             var avgSum = teacherCount > 0 ? totalSectionSum / teacherCount : 0;
             var avgPct = sectionMax > 0 ? (avgSum / sectionMax) * 100 : 0;
             sectorSectionReport.push({ name: sec.section, avg_percentage: Math.round(avgPct * 10) / 10, teacher_count: teacherCount });
@@ -1832,15 +1838,19 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           var teachersGrid = el('section', { className: 'sector-teachers', style: { borderTop: 'none', paddingTop: '1rem' } }, []);
           mergedTeachers.forEach(function(t) { teachersGrid.appendChild(renderTeacherCard(t, openTeacher)); });
           var avgPct = mergedTeachers.length ? mergedTeachers.reduce(function(s, t) { return s + (Number(t.overall_percentage) || 0); }, 0) / mergedTeachers.length : 0;
-          var avgScore52 = mergedTeachers.length ? mergedTeachers.reduce(function(s, t) {
-            var tot = t.total_score_out_of_52 != null ? Number(t.total_score_out_of_52) : (t.kpis && t.kpis.length >= 13 ? t.kpis.reduce(function(a, k) { return a + (Number(k.value) || 0); }, 0) : 0);
-            return s + tot;
-          }, 0) / mergedTeachers.length : 0;
+          var avgScore60 = mergedTeachers.length ? (function() {
+            var sum = 0, n = 0;
+            mergedTeachers.forEach(function(t) {
+              var v = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : null;
+              if (v != null) { sum += v; n++; }
+            });
+            return n ? sum / n : null;
+          }()) : null;
           const schoolHeader = el('section', { className: 'stats stats--sector' }, [
             el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'School'), el('div', { className: 'value' }, schoolName)]),
             el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'Teachers'), el('div', { className: 'value' }, String(mergedTeachers.length))]),
             el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'Avg. %'), el('div', { className: 'value' }, avgPct.toFixed(1) + '%')]),
-            el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'Avg. Score'), el('div', { className: 'value' }, avgScore52.toFixed(1) + '/52')])
+            el('div', { className: 'stat-card' }, [el('div', { className: 'label' }, 'Avg. Score'), el('div', { className: 'value' }, avgScore60 != null ? avgScore60.toFixed(1) + '/60' : '—')])
           ]);
           const main = el('main', { className: 'container teacher-level-view', style: { paddingTop: '2rem', paddingBottom: '2rem' } }, [
             schoolHeader,

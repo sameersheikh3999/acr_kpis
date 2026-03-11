@@ -4,8 +4,8 @@ from pathlib import Path
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
-# Default BigQuery table; override with ACR_DATA_TABLE env var if needed
-ACR_DATA_TABLE = os.getenv("ACR_DATA_TABLE", "tbproddb.dc_acr_data_updated").strip()
+# BigQuery table: fico_kpis. Override with ACR_DATA_TABLE env var if needed.
+ACR_DATA_TABLE = os.getenv("ACR_DATA_TABLE", "tbproddb.fico_kpis").strip()
 
 
 def get_bigquery_client() -> bigquery.Client:
@@ -16,11 +16,11 @@ def get_bigquery_client() -> bigquery.Client:
 
 
 def show_table_columns():
-    """Show the columns and their types for the ACR data table (set ACR_DATA_TABLE env var)."""
+    """Show the columns and their types for the FICO KPIs table (set ACR_DATA_TABLE env var to override)."""
     if not ACR_DATA_TABLE:
-        print("ACR_DATA_TABLE is not set. Set it to your BigQuery table, e.g.:")
-        print("  set ACR_DATA_TABLE=tbproddb.your_table_name   (Windows)")
-        print("  export ACR_DATA_TABLE=tbproddb.your_table_name   (Linux/Mac)")
+        print("ACR_DATA_TABLE is not set. Default is tbproddb.fico_kpis. To override:")
+        print("  set ACR_DATA_TABLE=tbproddb.fico_kpis   (Windows)")
+        print("  export ACR_DATA_TABLE=tbproddb.fico_kpis   (Linux/Mac)")
         return
     client = get_bigquery_client()
     table_ref = client.get_table(ACR_DATA_TABLE)
