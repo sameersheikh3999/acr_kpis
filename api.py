@@ -52,6 +52,7 @@ COLUMN_ALIASES = {
     "service_designation": ["service_designation", "Service_Designation", "designation", "Designation", "role", "title"],
     "gender": ["gender", "Gender", "GENDER"],
     "subject": ["subject", "Subject", "subject_name", "Subject_Name", "course", "Course", "subject_name_ur", "subject_name_en", "teaching_subject"],
+    "EMIS": ["EMIS", "emis", "Emis", "School_EMIS", "school_emis", "EMIS_Code", "emis_code", "school_emis_code"],
     # fico_kpis KPI section columns (Planning_and_Preparation, etc.)
     "planning_and_preparation": ["planning_and_preparation", "Planning_and_Preparation", "Planning_And_Preparation"],
     "subject_knowledge": ["subject_knowledge", "Subject_Knowledge"],
@@ -152,6 +153,19 @@ def row_to_teacher(row: dict) -> dict:
     return teacher
 
 
+def _load_heads() -> list:
+    """Load heads.json (EMIS -> head name, contact). Returns list of dicts with EMIS, head_names, head_contact_numbers."""
+    path = Path(__file__).resolve().parent / "heads.json"
+    if not path.is_file():
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
 def _empty_dashboard_payload():
     """Return empty dashboard structure when no data table is configured."""
     return {
@@ -177,6 +191,7 @@ def _empty_dashboard_payload():
             "subject": [],
             "subject_by_sector": [],
         },
+        "heads": [],
     }
 
 
@@ -506,8 +521,15 @@ def get_dashboard(response: Response):
         "teachers": merged_unique_teachers,
         "all_observations": all_teachers,
         "reports": reports,
+        "heads": _load_heads(),
     }
     return _json_safe_value(payload)
+
+
+@app.get("/api/heads")
+def get_heads():
+    """Return heads list (EMIS -> head name, contact) from heads.json for frontend lookup."""
+    return _load_heads()
 
 
 @app.get("/api/teachers/{user_id}")

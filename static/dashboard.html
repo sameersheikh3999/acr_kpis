@@ -591,7 +591,27 @@
           ].flat());
         }));
       }
-      function renderTeacherDetailBody(teacher, allObservations) {
+      function getHeadByEmis(emis, heads) {
+        if (heads == null || !heads.length) return null;
+        if (emis == null || emis === '') return null;
+        var keyStr = String(emis).trim();
+        var keyNum = parseInt(emis, 10);
+        var useNumeric = !isNaN(keyNum);
+        for (var i = 0; i < heads.length; i++) {
+          var h = heads[i];
+          if (!h) continue;
+          var hStr = String(h.EMIS || '').trim();
+          var hNum = parseInt(h.EMIS, 10);
+          if (useNumeric && !isNaN(hNum) && hNum === keyNum) return h;
+          if (keyStr && hStr === keyStr) return h;
+        }
+        return null;
+      }
+      function renderTeacherDetailBody(teacher, allObservations, heads) {
+        var headsList = heads && Array.isArray(heads) ? heads : [];
+        var headInfo = getHeadByEmis(teacher.EMIS || teacher.emis || teacher.School_EMIS || teacher.school_emis, headsList);
+        var headName = headInfo ? (headInfo.head_names || headInfo.head_name || '—') : '—';
+        var headContact = headInfo ? (headInfo.head_contact_numbers || headInfo.head_contact_number || headInfo.contact_number || '—') : '—';
         const rows = [
           ['Name', teacher.teacher_name],
           ['School', teacher.School],
@@ -602,8 +622,11 @@
           ['Joining date', teacher.joining_date],
           ['Last promotion', teacher.last_promotion_date],
           ['Contact', teacher.contact_number],
-          ['CNIC', teacher.cnic]
-        ].filter(([, v]) => v != null && String(v).trim());
+          ['CNIC', teacher.cnic],
+          ['EMIS', teacher.EMIS != null ? teacher.EMIS : (teacher.emis != null ? teacher.emis : (teacher.School_EMIS != null ? teacher.School_EMIS : ''))],
+          ['Head Name', headName],
+          ['Head Contact', headContact]
+        ].filter(function(x) { return x && (x[0] === 'Head Name' || x[0] === 'Head Contact' || x[0] === 'EMIS' || (x[1] != null && String(x[1]).trim() !== '')); });
         var teacherObservations = [];
         if (allObservations && allObservations.length) {
           var uid = (teacher.user_id || teacher.User_ID || '').toString().trim();
@@ -690,7 +713,7 @@
             el('h2', { style: { margin: 0, fontFamily: 'Outfit' } }, 'Teacher Report Card'),
             el('button', { type: 'button', className: 'panel-close', onClick: onClose, 'aria-label': 'Close' }, '✕')
           ]),
-          renderTeacherDetailBody(teacher, allObservations)
+          renderTeacherDetailBody(teacher, allObservations, dashboardData && dashboardData.heads ? dashboardData.heads : [])
         ]);
         panel.addEventListener('click', e => e.stopPropagation());
         return el('div', {}, [backdrop, panel]);
@@ -1535,7 +1558,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
               ])
             ])
           ]);
-          const bodyContent = renderTeacherDetailBody(teacher, allObs);
+          const bodyContent = renderTeacherDetailBody(teacher, allObs, dashboardData && dashboardData.heads ? dashboardData.heads : []);
           bodyContent.classList.add('teacher-detail-page-body');
           const main = el('main', { className: 'container teacher-detail-page', style: { paddingTop: '1rem', paddingBottom: '2rem' } }, [bodyContent]);
           setView(el('div', {}, [header, main]));
@@ -1670,14 +1693,19 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           } else { toggleWrap.style.display = 'none'; }
           var exportBtn = el('button', { type: 'button', className: 'top100-export-btn' }, 'Export CSV');
           exportBtn.addEventListener('click', function() {
-            var headers = ['Rank', 'Name', 'Sector', 'School', 'Overall %', 'Score/60', 'Observations', 'Subject', 'Designation', 'Gender', 'Qualifications'];
+            var heads = (dashboardData && dashboardData.heads) ? dashboardData.heads : [];
+            var headers = ['Rank', 'Name', 'Sector', 'School', 'Overall %', 'Score/60', 'Observations', 'Subject', 'Designation', 'Gender', 'Qualifications', 'Head Name', 'Head Contact'];
             if (ACR_KPI_SECTIONS && ACR_KPI_SECTIONS.length) ACR_KPI_SECTIONS.forEach(function(s) { headers.push(s.section); });
             var rows = [headers.map(csvEscape).join(',')];
             var numKpiCols = ACR_KPI_SECTIONS ? ACR_KPI_SECTIONS.length : 0;
             displayedList.forEach(function(t, i) {
+              var emis = t.EMIS != null ? t.EMIS : (t.emis != null ? t.emis : (t.School_EMIS != null ? t.School_EMIS : t.school_emis));
+              var headInfo = getHeadByEmis(emis, heads);
+              var headName = headInfo ? (headInfo.head_names || headInfo.head_name || '') : '';
+              var headContact = headInfo ? (headInfo.head_contact_numbers || headInfo.head_contact_number || headInfo.contact_number || '') : '';
               var score60 = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : '';
               var obs = t.observation_count != null ? Number(t.observation_count) : '';
-              var row = [i + 1, t.teacher_name || t.Teacher_Name || '', t.Sector || t.sector || '', t.School || t.school || '', t.overall_percentage != null ? Number(t.overall_percentage) : '', score60, obs, t.subject || t.Subject || '', t.service_designation || t.designation || '', t.gender || t.Gender || '', t.qualifications || t.Qualifications || ''];
+              var row = [i + 1, t.teacher_name || t.Teacher_Name || '', t.Sector || t.sector || '', t.School || t.school || '', t.overall_percentage != null ? Number(t.overall_percentage) : '', score60, obs, t.subject || t.Subject || '', t.service_designation || t.designation || '', t.gender || t.Gender || '', t.qualifications || t.Qualifications || '', headName, headContact];
               for (var ki = 0; ki < numKpiCols; ki++) row.push((t.kpis && t.kpis[ki]) ? (t.kpis[ki].value != null ? t.kpis[ki].value : '') : '');
               rows.push(row.map(function(v) { return csvEscape(v); }).join(','));
             });
@@ -2108,7 +2136,18 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
         .then(function(data) {
           var teachers = (data && data.teachers) ? data.teachers.length : 0;
           var sectors = (data && data.sectors) ? data.sectors.length : 0;
-          console.log('[ACR Dashboard] Data loaded:', teachers, 'teachers,', sectors, 'sectors', data);
+          if (!data.heads || !data.heads.length) {
+            return fetch(API + '/heads').then(function(r) { return r.ok ? r.json() : []; }).then(function(heads) {
+              if (data) data.heads = Array.isArray(heads) ? heads : [];
+              return data;
+            }).catch(function() { if (data) data.heads = []; return data; });
+          }
+          return Promise.resolve(data);
+        })
+        .then(function(data) {
+          var teachers = (data && data.teachers) ? data.teachers.length : 0;
+          var sectors = (data && data.sectors) ? data.sectors.length : 0;
+          console.log('[ACR Dashboard] Data loaded:', teachers, 'teachers,', sectors, 'sectors, heads:', (data && data.heads) ? data.heads.length : 0);
           renderDashboard(data);
         })
         .catch(function(err) {
