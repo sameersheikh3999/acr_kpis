@@ -118,6 +118,45 @@
     .all-teachers-box { border-radius: 1.25rem; border: 2px dashed rgba(147, 197, 253, 0.5); background: linear-gradient(135deg, rgba(191, 219, 254, 0.5) 0%, rgba(254, 226, 226, 0.5) 100%); padding: 1.25rem 1.5rem; margin-top: 0.5rem; margin-bottom: 1.5rem; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; box-shadow: 0 4px 20px rgba(147, 197, 253, 0.15); }
     .all-teachers-box:hover { transform: translateY(-2px); background: linear-gradient(135deg, rgba(191, 219, 254, 0.65) 0%, rgba(254, 226, 226, 0.65) 100%); border-color: rgba(147, 197, 253, 0.8); box-shadow: 0 8px 28px rgba(147, 197, 253, 0.2), 0 0 20px rgba(254, 226, 226, 0.25); }
     .all-teachers-box h3 { margin: 0 0 0.35rem 0; font-family: Outfit, sans-serif; font-size: 1.05rem; color: var(--text); }
+    .top100-section { margin-bottom: 2rem; }
+    .top100-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
+    .top100-export-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(69,123,157,0.3); transition: transform 0.2s, box-shadow 0.2s; }
+    .top100-export-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(69,123,157,0.4); }
+    .top100-list { border-radius: 1rem; border: 1px solid var(--border); background: var(--card-bg); overflow: hidden; box-shadow: 0 4px 20px rgba(29,53,87,0.06); }
+    .top100-row { border-bottom: 1px solid var(--border); }
+    .top100-row:last-child { border-bottom: none; }
+    .top100-row-header { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; cursor: pointer; transition: background 0.2s; min-height: 52px; }
+    .top100-row-header:hover { background: var(--surface); }
+    .top100-expand { width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--muted); transition: transform 0.2s; }
+    .top100-row.expanded .top100-expand { transform: rotate(90deg); }
+    .top100-rank { min-width: 2.5rem; font-family: Outfit, sans-serif; font-weight: 700; font-size: 1rem; color: var(--muted); }
+    .top100-name { flex: 1; min-width: 0; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top100-sector { font-size: 0.875rem; color: var(--muted); min-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top100-pct { font-family: Outfit, sans-serif; font-weight: 700; font-size: 1rem; min-width: 3.5rem; text-align: right; }
+    .top100-score60 { font-size: 0.8125rem; color: var(--muted); min-width: 3rem; text-align: right; }
+    .top100-row-detail { display: none; padding: 1rem 1rem 1rem 3.5rem; background: rgba(29,53,87,0.04); border-top: 1px solid var(--border); font-size: 0.875rem; }
+    .top100-row.expanded .top100-row-detail { display: block; }
+    .top100-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem 1.5rem; }
+    .top100-detail-item { display: flex; gap: 0.35rem; }
+    .top100-detail-item .k { color: var(--muted); }
+    .top100-detail-item .v { font-weight: 500; color: var(--text); }
+    .top100-list.collapsed .top100-row:nth-child(n+6) { display: none; }
+    .top100-toggle-wrap { margin-top: 1rem; text-align: center; }
+    .top100-toggle-btn { padding: 0.5rem 1.25rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: var(--surface); color: var(--accent); border: 2px solid var(--border); cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .top100-toggle-btn:hover { background: rgba(69,123,157,0.12); color: var(--text); }
+    .top100-mode-row { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; margin-bottom: 1rem; padding: 1rem; border-radius: 1rem; background: var(--surface); border: 1px solid var(--border); }
+    .top100-mode-label { font-size: 0.875rem; font-weight: 600; color: var(--muted); margin-right: 0.25rem; }
+    .top100-mode-options { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .top100-mode-options input[type="radio"] { margin-right: 0.25rem; accent-color: var(--accent); }
+    .top100-proportion-box { display: none; margin-top: 1rem; padding: 1rem; border-radius: 0.75rem; background: rgba(255,255,255,0.7); border: 1px solid var(--border); }
+    .top100-proportion-box.visible { display: block; }
+    .top100-proportion-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem 1.5rem; margin-bottom: 0.75rem; }
+    .top100-proportion-item { display: flex; align-items: center; gap: 0.5rem; }
+    .top100-proportion-item label { font-size: 0.8125rem; color: var(--text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .top100-proportion-item input { width: 3.5rem; padding: 0.25rem 0.35rem; font-size: 0.875rem; border: 1px solid var(--border); border-radius: 6px; }
+    .top100-proportion-sum { font-size: 0.8125rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .top100-update-btn { padding: 0.4rem 0.9rem; font-size: 0.8125rem; font-weight: 600; border-radius: 8px; background: var(--accent); color: #fff; border: none; cursor: pointer; }
+    .top100-update-btn:hover { filter: brightness(1.08); }
     .all-teachers-box p { margin: 0; font-size: 0.875rem; color: var(--muted); }
     .breadcrumb { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 0.875rem; color: var(--muted); margin-bottom: 1rem; }
     .breadcrumb a, .breadcrumb span { color: var(--muted); }
@@ -1503,6 +1542,156 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           updateUrl(false);
         }
         const openTeacher = (t) => { renderTeacherPage(t); };
+        function csvEscape(s) {
+          if (s == null || s === '') return '';
+          var str = String(s).trim();
+          if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) return '"' + str.replace(/"/g, '""') + '"';
+          return str;
+        }
+        var _top100State = { mode: 'simple', proportions: {} };
+        function getTop100List(dashboardData) {
+          var teachers = (dashboardData && dashboardData.teachers) ? dashboardData.teachers.slice() : [];
+          if (teachers.length === 0) return [];
+          if (_top100State.mode === 'simple') {
+            teachers.sort(function(a, b) { var pa = Number(a.overall_percentage) || 0, pb = Number(b.overall_percentage) || 0; return pb - pa; });
+            return teachers.slice(0, 100);
+          }
+          var sectors = (dashboardData && dashboardData.sectors) ? dashboardData.sectors : [];
+          var bySector = {};
+          teachers.forEach(function(t) {
+            var sec = (t.Sector != null ? t.Sector : t.sector != null ? t.sector : '—').toString().trim() || '—';
+            if (!bySector[sec]) bySector[sec] = [];
+            bySector[sec].push(t);
+          });
+          Object.keys(bySector).forEach(function(sec) { bySector[sec].sort(function(a, b) { var pa = Number(a.overall_percentage) || 0, pb = Number(b.overall_percentage) || 0; return pb - pa; }); });
+          var proportions = _top100State.proportions || {};
+          var combined = [];
+          Object.keys(bySector).forEach(function(sec) {
+            var n = Math.max(0, parseInt(proportions[sec], 10) || 0);
+            combined = combined.concat(bySector[sec].slice(0, n));
+          });
+          combined.sort(function(a, b) { var pa = Number(a.overall_percentage) || 0, pb = Number(b.overall_percentage) || 0; return pb - pa; });
+          return combined.slice(0, 100);
+        }
+        function createTop100Row(t, rank, openTeacher) {
+          var pct = Number(t.overall_percentage) || 0;
+          var score60 = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60).toFixed(1) : '—';
+          var row = el('div', { className: 'top100-row' });
+          var header = el('div', { className: 'top100-row-header' });
+          var expandIcon = el('span', { className: 'top100-expand' }, '▶');
+          header.appendChild(expandIcon);
+          header.appendChild(el('span', { className: 'top100-rank' }, String(rank)));
+          header.appendChild(el('span', { className: 'top100-name' }, (t.teacher_name || t.Teacher_Name || '—')));
+          header.appendChild(el('span', { className: 'top100-sector' }, (t.Sector || t.sector || '—')));
+          header.appendChild(el('span', { className: 'top100-pct' }, pct.toFixed(1) + '%'));
+          header.appendChild(el('span', { className: 'top100-score60' }, score60 + '/60'));
+          header.addEventListener('click', function() { row.classList.toggle('expanded'); });
+          row.appendChild(header);
+          var detail = el('div', { className: 'top100-row-detail' });
+          var grid = el('div', { className: 'top100-detail-grid' });
+          [['School', t.School || t.school || '—'], ['Subject', t.subject || t.Subject || '—'], ['Designation', t.service_designation || t.designation || '—'], ['Observations', (t.observation_count != null ? t.observation_count : '—')], ['Gender', t.gender || t.Gender || '—'], ['Qualifications', t.qualifications || t.Qualifications || '—']].forEach(function(pair) { grid.appendChild(el('div', { className: 'top100-detail-item' }, [el('span', { className: 'k' }, pair[0] + ':'), el('span', { className: 'v' }, String(pair[1]))])); });
+          if (t.kpis && t.kpis.length) t.kpis.forEach(function(k) { grid.appendChild(el('div', { className: 'top100-detail-item' }, [el('span', { className: 'k' }, (k.name || '') + ':'), el('span', { className: 'v' }, (k.value != null ? k.value : '—'))])); });
+          var viewBtn = el('button', { type: 'button', className: 'nav-btn', style: { marginTop: '0.75rem' } }, 'View full report card');
+          viewBtn.addEventListener('click', function(e) { e.stopPropagation(); if (typeof openTeacher === 'function') openTeacher(t); });
+          detail.appendChild(grid); detail.appendChild(viewBtn);
+          row.appendChild(detail);
+          return row;
+        }
+        function renderTop100Teachers(dashboardData, openTeacher) {
+          var displayedList = getTop100List(dashboardData);
+          if (!displayedList || displayedList.length === 0) return null;
+          var teachers = (dashboardData && dashboardData.teachers) || [];
+          var sectors = (dashboardData && dashboardData.sectors) || [];
+          var bySector = {};
+          teachers.forEach(function(t) { var sec = (t.Sector != null ? t.Sector : t.sector != null ? t.sector : '—').toString().trim() || '—'; if (!bySector[sec]) bySector[sec] = []; bySector[sec].push(t); });
+          var sectorNames = Object.keys(bySector).sort();
+          var section = el('section', { className: 'top100-section' });
+          var toolbar = el('div', { className: 'top100-toolbar' });
+          toolbar.appendChild(el('h2', { className: 'section-heading', style: { margin: 0 } }, 'Top 100 Teachers (by average overall_percentage)'));
+          var modeRow = el('div', { className: 'top100-mode-row' });
+          modeRow.appendChild(el('span', { className: 'top100-mode-label' }, 'List by:'));
+          var simpleRadio = el('input', { type: 'radio', name: 'top100mode', id: 'top100-simple', checked: _top100State.mode === 'simple' });
+          var propRadio = el('input', { type: 'radio', name: 'top100mode', id: 'top100-proportional' });
+          if (_top100State.mode === 'proportional') propRadio.checked = true;
+          var optionsDiv = el('div', { className: 'top100-mode-options' });
+          optionsDiv.appendChild(simpleRadio); optionsDiv.appendChild(el('label', { htmlFor: 'top100-simple' }, 'Simple top 100'));
+          optionsDiv.appendChild(propRadio); optionsDiv.appendChild(el('label', { htmlFor: 'top100-proportional' }, 'Proportional by sector'));
+          modeRow.appendChild(optionsDiv);
+          section.appendChild(toolbar);
+          section.appendChild(modeRow);
+          if (_top100State.mode === 'proportional' && Object.keys(_top100State.proportions).length === 0 && sectorNames.length) {
+            var per = Math.floor(100 / sectorNames.length);
+            var rem = 100 - per * sectorNames.length;
+            sectorNames.forEach(function(sec, idx) { _top100State.proportions[sec] = idx < rem ? per + 1 : per; });
+          }
+          var proportionBox = el('div', { className: 'top100-proportion-box' + (_top100State.mode === 'proportional' ? ' visible' : '') });
+          var proportionGrid = el('div', { className: 'top100-proportion-grid' });
+          sectorNames.forEach(function(sec) {
+            var count = bySector[sec].length;
+            var val = _top100State.proportions[sec] != null ? _top100State.proportions[sec] : (sectorNames.length ? Math.round(100 / sectorNames.length) : 0);
+            var lab = el('label', {}, (sec.length > 18 ? sec.slice(0, 16) + '…' : sec) + ' (max ' + count + ')');
+            var inp = el('input', { type: 'number', min: 0, max: 100, value: String(val), 'data-sector': sec });
+            proportionGrid.appendChild(el('div', { className: 'top100-proportion-item' }, [lab, inp]));
+          });
+          proportionBox.appendChild(proportionGrid);
+          var sumSpan = el('span', { className: 'top100-proportion-sum' }, 'Sum: 0');
+          function updateSum() { var s = 0; proportionBox.querySelectorAll('input[type="number"]').forEach(function(inp) { s += parseInt(inp.value, 10) || 0; }); sumSpan.textContent = 'Sum: ' + s + ' (target 100)'; }
+          proportionBox.querySelectorAll('input[type="number"]').forEach(function(inp) { inp.addEventListener('input', updateSum); });
+          updateSum();
+          var updateBtn = el('button', { type: 'button', className: 'top100-update-btn' }, 'Update list');
+          proportionBox.appendChild(sumSpan);
+          proportionBox.appendChild(updateBtn);
+          section.appendChild(proportionBox);
+          simpleRadio.addEventListener('change', function() { if (this.checked) { _top100State.mode = 'simple'; proportionBox.classList.remove('visible'); refreshList(); } });
+          propRadio.addEventListener('change', function() { if (this.checked) { _top100State.mode = 'proportional'; proportionBox.classList.add('visible'); refreshList(); } });
+          var listEl = el('div', { className: 'top100-list collapsed' });
+          var toggleWrap = el('div', { className: 'top100-toggle-wrap' });
+          var toggleBtn = el('button', { type: 'button', className: 'top100-toggle-btn' }, 'Show full list (' + displayedList.length + ')');
+          function refreshList() {
+            displayedList = getTop100List(dashboardData);
+            listEl.replaceChildren();
+            listEl.classList.add('collapsed');
+            displayedList.forEach(function(t, i) { listEl.appendChild(createTop100Row(t, i + 1, openTeacher)); });
+            toggleBtn.textContent = displayedList.length > 5 ? 'Show full list (' + displayedList.length + ')' : '';
+            if (displayedList.length <= 5) toggleWrap.style.display = 'none'; else toggleWrap.style.display = '';
+          }
+          updateBtn.addEventListener('click', function() {
+            proportionBox.querySelectorAll('input[type="number"]').forEach(function(inp) { var sec = inp.getAttribute('data-sector'); if (sec) _top100State.proportions[sec] = parseInt(inp.value, 10) || 0; });
+            refreshList();
+          });
+          displayedList.forEach(function(t, i) { listEl.appendChild(createTop100Row(t, i + 1, openTeacher)); });
+          section.appendChild(listEl);
+          if (displayedList.length > 5) {
+            toggleBtn.addEventListener('click', function() {
+              if (listEl.classList.contains('collapsed')) { listEl.classList.remove('collapsed'); toggleBtn.textContent = 'Show top 5 only'; } else { listEl.classList.add('collapsed'); toggleBtn.textContent = 'Show full list (' + displayedList.length + ')'; }
+            });
+            toggleWrap.appendChild(toggleBtn);
+            section.appendChild(toggleWrap);
+          } else { toggleWrap.style.display = 'none'; }
+          var exportBtn = el('button', { type: 'button', className: 'top100-export-btn' }, 'Export CSV');
+          exportBtn.addEventListener('click', function() {
+            var headers = ['Rank', 'Name', 'Sector', 'School', 'Overall %', 'Score/60', 'Observations', 'Subject', 'Designation', 'Gender', 'Qualifications'];
+            if (ACR_KPI_SECTIONS && ACR_KPI_SECTIONS.length) ACR_KPI_SECTIONS.forEach(function(s) { headers.push(s.section); });
+            var rows = [headers.map(csvEscape).join(',')];
+            var numKpiCols = ACR_KPI_SECTIONS ? ACR_KPI_SECTIONS.length : 0;
+            displayedList.forEach(function(t, i) {
+              var score60 = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : '';
+              var obs = t.observation_count != null ? Number(t.observation_count) : '';
+              var row = [i + 1, t.teacher_name || t.Teacher_Name || '', t.Sector || t.sector || '', t.School || t.school || '', t.overall_percentage != null ? Number(t.overall_percentage) : '', score60, obs, t.subject || t.Subject || '', t.service_designation || t.designation || '', t.gender || t.Gender || '', t.qualifications || t.Qualifications || ''];
+              for (var ki = 0; ki < numKpiCols; ki++) row.push((t.kpis && t.kpis[ki]) ? (t.kpis[ki].value != null ? t.kpis[ki].value : '') : '');
+              rows.push(row.map(function(v) { return csvEscape(v); }).join(','));
+            });
+            var csv = rows.join('\r\n');
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            a.download = 'top100_teachers_' + (new Date().toISOString().slice(0, 10)) + '.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
+          toolbar.appendChild(exportBtn);
+          return section;
+        }
+
         function renderOverview() {
           currentView = 'overview';
           currentSectorName = null;
@@ -1589,10 +1778,12 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
                   return n ? sum / n : null;
                 })()
               : null);
+          const top100Section = renderTop100Teachers(dashboardData, openTeacher);
           const overviewHeading = el('h2', { className: 'section-heading overview-heading' }, 'OVERVIEW');
           const main = el('main', { className: 'container', style: { paddingTop: '1.5rem', paddingBottom: '2rem' } }, [
             overviewHeading,
             renderStats(dashboardData.overall, true, overviewAvgScore60),
+            top100Section,
             sectorsHeading,
             sectorsOverview,
             reportsSection
