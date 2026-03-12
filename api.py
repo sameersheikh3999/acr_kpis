@@ -1,5 +1,6 @@
 """FastAPI backend for ACR-KPIs dashboard: serves teacher and sector data from BigQuery."""
 
+import base64
 import json
 import os
 from collections import defaultdict
@@ -115,13 +116,19 @@ def get_bigquery_client() -> bigquery.Client:
     """Create BigQuery client. Uses GOOGLE_APPLICATION_CREDENTIALS_JSON env var on Railway, else keyy.json locally."""
     creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
     if creds_json:
+        raw = creds_json
+        # Try JSON first; if it fails, try base64 (Railway/some hosts mangle newlines)
         try:
-            info = json.loads(creds_json)
-        except json.JSONDecodeError as e:
-            raise ValueError(
-                "GOOGLE_APPLICATION_CREDENTIALS_JSON is set but invalid JSON. "
-                "Paste the full contents of your service account JSON key."
-            ) from e
+            info = json.loads(raw)
+        except json.JSONDecodeError:
+            try:
+                raw = base64.b64decode(creds_json).decode("utf-8")
+                info = json.loads(raw)
+            except Exception:
+                raise ValueError(
+                    "GOOGLE_APPLICATION_CREDENTIALS_JSON is set but invalid. "
+                    "Use the full service account JSON, or its base64-encoded string."
+                )
         creds = service_account.Credentials.from_service_account_info(info)
     else:
         key_path = Path(__file__).with_name("keyy.json")

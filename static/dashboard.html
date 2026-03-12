@@ -2130,7 +2130,16 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
       fetch(API + '/dashboard')
         .then(function(r) {
           console.log('[ACR Dashboard] Response', r.status, r.statusText, r.url);
-          return r.ok ? r.json() : Promise.reject(new Error(r.statusText));
+          var ct = (r.headers.get('content-type') || '');
+          var isJson = ct.indexOf('application/json') !== -1;
+          if (!r.ok && isJson) {
+            return r.json().then(function(data) {
+              var msg = (data && data.message) ? data.message : (r.statusText || 'Request failed');
+              return Promise.reject(new Error(msg));
+            });
+          }
+          if (r.ok) return r.json();
+          return Promise.reject(new Error(r.statusText || 'Request failed'));
         })
         .then(function(data) {
           var teachers = (data && data.teachers) ? data.teachers.length : 0;
@@ -2153,7 +2162,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           console.error('[ACR Dashboard] Failed to load:', err.message, err);
           setView(el('div', { className: 'error' }, [
             el('p', {}, 'Unable to load data.'),
-            el('p', { style: { fontSize: '0.875rem', color: 'var(--muted)' } }, err.message || 'Ensure the API is running.')
+            el('p', { style: { fontSize: '0.875rem', color: 'var(--muted)', maxWidth: '32rem' } }, err.message || 'Ensure the API is running.')
           ]));
         });
     })();
