@@ -615,6 +615,28 @@ def get_teacher(user_id: str):
 _performance_dashboard = Path(__file__).resolve().parent / "static" / "dashboard.html"
 
 
+@app.get("/api/env-check")
+def env_check():
+    """Safe diagnostic: whether credentials are visible in this container (no secrets returned)."""
+    creds_json = _get_creds_json_from_env()
+    key_path = Path(__file__).resolve().parent / "keyy.json"
+    credential_like = [
+        k for k in os.environ
+        if "GOOGLE" in k.upper() or "CREDENTIAL" in k.upper() or "KEYY" in k or "keyy" in k.lower()
+    ]
+    return {
+        "credentials_in_env": bool(creds_json),
+        "creds_length_if_present": len(creds_json) if creds_json else 0,
+        "keyy_json_file_exists": key_path.is_file(),
+        "env_var_names_we_check": ["GOOGLE_APPLICATION_CREDENTIALS_JSON", "KEYY_JSON", "keyy.json"],
+        "credential_like_var_names_in_container": sorted(credential_like),
+        "hint": (
+            "Set GOOGLE_APPLICATION_CREDENTIALS_JSON (or KEYY_JSON) in Railway Variables to the full JSON key, then Redeploy."
+            if not creds_json else "Credentials are present."
+        ),
+    }
+
+
 @app.get("/favicon.ico")
 def _favicon():
     """Avoid 404 for favicon; return no content."""
@@ -631,5 +653,6 @@ def _root():
         "<!DOCTYPE html><html><head><meta charset='utf-8'><title>ACR-KPIs Dashboard</title></head><body style='font-family:system-ui;max-width:600px;margin:3rem auto;padding:1rem;background:#0a0f1a;color:#e2e8f0'>"
         "<h1>ACR-KPIs Performance Dashboard API</h1><p>API is running.</p>"
         "<p><a href='/api/dashboard' style='color:#0ea5e9'>/api/dashboard</a> — dashboard data</p>"
+        "<p><a href='/api/env-check' style='color:#0ea5e9'>/api/env-check</a> — credential env diagnostic (Railway)</p>"
         "<p><a href='/docs' style='color:#0ea5e9'>/docs</a> — API docs</p></body></html>"
     )
