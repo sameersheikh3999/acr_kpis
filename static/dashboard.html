@@ -697,8 +697,7 @@
               breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
             ].filter(Boolean)),
             el('div', { className: 'panel-part-content' }, [
-              renderKpiSectionBars(kpisForBreakdown),
-              renderKpiGrid(kpisForBreakdown)
+              renderKpiSectionBars(kpisForBreakdown)
             ].filter(Boolean))
           ].filter(Boolean))
         ]);
