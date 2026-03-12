@@ -21,6 +21,19 @@ PORT = int(os.getenv("PORT", "8000"))
 ACR_DATA_TABLE = os.getenv("ACR_DATA_TABLE", "tbproddb.fico_kpis").strip()
 
 app = FastAPI(title="ACR-KPIs Performance Dashboard API", version="1.0.0")
+
+
+@app.on_event("startup")
+def _log_credential_env():
+    """Log which credential-related env vars are set (names only) for Railway debugging."""
+    creds_json = _get_creds_json_from_env()
+    if creds_json:
+        print("[ACR API] BigQuery credentials found in env (len=%d)" % len(creds_json))
+    else:
+        related = [k for k in os.environ if "GOOGLE" in k.upper() or "CREDENTIAL" in k.upper() or "KEYY" in k or "keyy" in k.lower()]
+        print("[ACR API] Startup: no credential env. Names that might be relevant: %s" % (related or "(none)"))
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -112,16 +125,35 @@ def _normalize_row(row: dict) -> dict:
     return out
 
 
+def _get_creds_json_from_env() -> str:
+    """Get service account JSON from any known or credential-like env var."""
+    # Exact names first
+    for name in ("GOOGLE_APPLICATION_CREDENTIALS_JSON", "KEYY_JSON", "keyy.json"):
+        v = os.getenv(name, "").strip()
+        if v:
+            return v
+    # Fallback: any env var whose name suggests credentials and value looks like JSON
+    for key, value in os.environ.items():
+        if not value or not value.strip():
+            continue
+        key_upper = key.upper()
+        if (
+            "GOOGLE" in key_upper
+            or "CREDENTIAL" in key_upper
+            or "KEYY" in key_upper
+            or "KEYY" in key
+        ) and value.strip().startswith("{"):
+            return value.strip()
+    return ""
+
+
 def get_bigquery_client() -> bigquery.Client:
-    """Create BigQuery client. Uses GOOGLE_APPLICATION_CREDENTIALS_JSON or KEYY_JSON env on Railway, else keyy.json file."""
-    gac = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
-    keyy_env = os.getenv("KEYY_JSON", "").strip() or os.getenv("keyy.json", "").strip()
-    creds_json = gac or keyy_env
+    """Create BigQuery client. Uses env var(s) on Railway, else keyy.json file."""
+    creds_json = _get_creds_json_from_env()
     if not creds_json:
-        print(
-            "[BigQuery] No env credentials: GOOGLE_APPLICATION_CREDENTIALS_JSON len=%s, KEYY_JSON/keyy.json len=%s"
-            % (len(gac), len(keyy_env))
-        )
+        # Log which credential-related env vars exist (names only, no values)
+        related = [k for k in os.environ if "GOOGLE" in k.upper() or "CREDENTIAL" in k.upper() or "KEYY" in k or "keyy" in k.lower()]
+        print("[BigQuery] No credentials in env. Related env var names: %s" % (related or "(none)"))
     if creds_json:
         raw = creds_json
         # Try JSON first; if it fails, try base64 (Railway/some hosts mangle newlines)
