@@ -113,15 +113,23 @@ def _normalize_row(row: dict) -> dict:
 
 def get_bigquery_client() -> bigquery.Client:
     """Create BigQuery client. Uses GOOGLE_APPLICATION_CREDENTIALS_JSON env var on Railway, else keyy.json locally."""
-    creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON")
+    creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
     if creds_json:
-        info = json.loads(creds_json)
+        try:
+            info = json.loads(creds_json)
+        except json.JSONDecodeError as e:
+            raise ValueError(
+                "GOOGLE_APPLICATION_CREDENTIALS_JSON is set but invalid JSON. "
+                "Paste the full contents of your service account JSON key."
+            ) from e
         creds = service_account.Credentials.from_service_account_info(info)
     else:
         key_path = Path(__file__).with_name("keyy.json")
         if not key_path.is_file():
             raise FileNotFoundError(
-                "No credentials: set GOOGLE_APPLICATION_CREDENTIALS_JSON (Railway) or add keyy.json (local)."
+                "BigQuery credentials not found. On Railway: set Variables → GOOGLE_APPLICATION_CREDENTIALS_JSON "
+                "to the full contents of your Google Cloud service account JSON key. "
+                "Locally: add keyy.json in the project root."
             )
         creds = service_account.Credentials.from_service_account_file(str(key_path))
     return bigquery.Client(credentials=creds, project=creds.project_id)
@@ -203,7 +211,16 @@ def get_dashboard(response: Response):
     response.headers["Pragma"] = "no-cache"
     if not ACR_DATA_TABLE:
         return _empty_dashboard_payload()
-    client = get_bigquery_client()
+    try:
+        client = get_bigquery_client()
+    except FileNotFoundError as e:
+        print(f"[ACR API] Credentials missing: {e}")
+        response.status_code = 503
+        return {"error": "credentials_missing", "message": str(e)}
+    except ValueError as e:
+        print(f"[ACR API] Invalid credentials JSON: {e}")
+        response.status_code = 503
+        return {"error": "credentials_invalid", "message": str(e)}
     query = f"SELECT * FROM `{ACR_DATA_TABLE}`"
     rows = list(client.query(query).result())
     print(f"[Dashboard] Loaded {len(rows)} rows from {ACR_DATA_TABLE}")
