@@ -113,8 +113,15 @@ def _normalize_row(row: dict) -> dict:
 
 
 def get_bigquery_client() -> bigquery.Client:
-    """Create BigQuery client. Uses GOOGLE_APPLICATION_CREDENTIALS_JSON env var on Railway, else keyy.json locally."""
-    creds_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
+    """Create BigQuery client. Uses GOOGLE_APPLICATION_CREDENTIALS_JSON or KEYY_JSON env on Railway, else keyy.json file."""
+    gac = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_JSON", "").strip()
+    keyy_env = os.getenv("KEYY_JSON", "").strip() or os.getenv("keyy.json", "").strip()
+    creds_json = gac or keyy_env
+    if not creds_json:
+        print(
+            "[BigQuery] No env credentials: GOOGLE_APPLICATION_CREDENTIALS_JSON len=%s, KEYY_JSON/keyy.json len=%s"
+            % (len(gac), len(keyy_env))
+        )
     if creds_json:
         raw = creds_json
         # Try JSON first; if it fails, try base64 (Railway/some hosts mangle newlines)
@@ -126,7 +133,7 @@ def get_bigquery_client() -> bigquery.Client:
                 info = json.loads(raw)
             except Exception:
                 raise ValueError(
-                    "GOOGLE_APPLICATION_CREDENTIALS_JSON is set but invalid. "
+                    "Credentials env var is set but invalid JSON. "
                     "Use the full service account JSON, or its base64-encoded string."
                 )
         creds = service_account.Credentials.from_service_account_info(info)
@@ -134,9 +141,8 @@ def get_bigquery_client() -> bigquery.Client:
         key_path = Path(__file__).with_name("keyy.json")
         if not key_path.is_file():
             raise FileNotFoundError(
-                "BigQuery credentials not found. On Railway: set Variables → GOOGLE_APPLICATION_CREDENTIALS_JSON "
-                "to the full contents of your Google Cloud service account JSON key. "
-                "Locally: add keyy.json in the project root."
+                "BigQuery credentials not found. On Railway: set Variable GOOGLE_APPLICATION_CREDENTIALS_JSON "
+                "(or KEYY_JSON or keyy.json) to the full JSON key. Locally: add keyy.json in the project root."
             )
         creds = service_account.Credentials.from_service_account_file(str(key_path))
     return bigquery.Client(credentials=creds, project=creds.project_id)
