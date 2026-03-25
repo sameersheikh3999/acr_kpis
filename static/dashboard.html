@@ -23,6 +23,8 @@
       --panel-bg: rgba(241,250,238,0.98);
       --chart-line: #0369a1;
       --ring-bg: rgba(29,53,87,0.12);
+      /* Sticky site header height — Top 100 table header sticks below this (updated by JS on overview) */
+      --sticky-site-header-height: 5.75rem;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: 'DM Sans', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased; }
@@ -145,7 +147,8 @@
     .csv-export-actions .csv-btn-secondary:hover { background: rgba(69,123,157,0.1); }
     .csv-export-actions .csv-btn-primary { background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; box-shadow: 0 2px 8px rgba(69,123,157,0.3); }
     .csv-export-actions .csv-btn-primary:hover { transform: translateY(-1px); }
-    .top100-list { border-radius: 1rem; border: 1px solid var(--border); background: var(--card-bg); overflow: hidden; box-shadow: 0 4px 20px rgba(29,53,87,0.06); }
+    /* overflow must be visible so .top100-columns can use position:sticky (hidden clips sticky) */
+    .top100-list { border-radius: 1rem; border: 1px solid var(--border); background: var(--card-bg); overflow: visible; box-shadow: 0 4px 20px rgba(29,53,87,0.06); }
     /* Top 100: use a shared grid so headers + rows align */
     .top100-columns, .top100-row-header {
       display: grid;
@@ -163,7 +166,7 @@
       column-gap: 0.75rem;
     }
 
-    .top100-columns { position: sticky; top: 0; z-index: 5; padding: 0.6rem 1rem; background: rgba(248, 250, 252, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+    .top100-columns { position: sticky; top: var(--sticky-site-header-height); z-index: 35; padding: 0.6rem 1rem; background: rgba(248, 250, 252, 0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); box-shadow: 0 2px 12px rgba(29,53,87,0.08); }
     .top100-columns .top100-expand { background: transparent; border-style: dashed; font-weight: 700; }
     .top100-columns .top100-rank, .top100-columns .top100-name, .top100-columns .top100-school, .top100-columns .top100-emis, .top100-columns .top100-subject, .top100-columns .top100-sector, .top100-columns .top100-pct, .top100-columns .top100-score60 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
     .top100-row { border-bottom: 1px solid var(--border); }
@@ -188,7 +191,8 @@
     .top100-detail-item { display: flex; gap: 0.35rem; }
     .top100-detail-item .k { color: var(--muted); }
     .top100-detail-item .v { font-weight: 500; color: var(--text); }
-    .top100-list.collapsed .top100-row:nth-child(n+6) { display: none; }
+    /* 1st child is sticky column header; rows 2–6 = top 5 teachers; hide from 7th child */
+    .top100-list.collapsed .top100-row:nth-child(n+7) { display: none; }
     .top100-toggle-wrap { margin-top: 1rem; text-align: center; }
     .top100-toggle-btn { padding: 0.5rem 1.25rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: var(--surface); color: var(--accent); border: 2px solid var(--border); cursor: pointer; transition: background 0.2s, color 0.2s; }
     .top100-toggle-btn:hover { background: rgba(69,123,157,0.12); color: var(--text); }
@@ -1971,6 +1975,13 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           return section;
         }
 
+        function syncOverviewStickyHeaderOffset() {
+          var hdr = document.querySelector('#app .view-root--overview .header');
+          if (!hdr) return;
+          var h = Math.ceil(hdr.getBoundingClientRect().height);
+          document.documentElement.style.setProperty('--sticky-site-header-height', h + 'px');
+        }
+        window.addEventListener('resize', syncOverviewStickyHeaderOffset);
         function renderOverview() {
           currentView = 'overview';
           currentSectorName = null;
@@ -2067,8 +2078,9 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             sectorsOverview,
             reportsSection
           ].filter(Boolean));
-          setView(el('div', {}, [header, main]));
+          setView(el('div', { className: 'view-root view-root--overview' }, [header, main]));
           updateUrl(false);
+          requestAnimationFrame(function() { requestAnimationFrame(syncOverviewStickyHeaderOffset); });
         }
 
         function renderBySector() {
