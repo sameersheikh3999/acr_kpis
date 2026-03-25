@@ -122,6 +122,29 @@
     .top100-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
     .top100-export-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(69,123,157,0.3); transition: transform 0.2s, box-shadow 0.2s; }
     .top100-export-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(69,123,157,0.4); }
+    .csv-export-modal-backdrop { position: fixed; inset: 0; z-index: 200; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .csv-export-modal { width: min(920px, 100%); max-height: min(90vh, 720px); overflow: auto; background: var(--card-bg); border-radius: 1rem; border: 1px solid var(--border); box-shadow: 0 24px 48px rgba(0,0,0,0.2); padding: 1.25rem 1.5rem; }
+    .csv-export-modal h3 { margin: 0 0 0.35rem 0; font-family: Outfit, sans-serif; font-size: 1.15rem; color: var(--text); }
+    .csv-export-modal-sub { margin: 0 0 1rem 0; font-size: 0.8125rem; color: var(--muted); line-height: 1.45; }
+    .csv-export-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+    @media (max-width: 700px) { .csv-export-columns { grid-template-columns: 1fr; } }
+    .csv-export-col h4 { margin: 0 0 0.35rem 0; font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .csv-export-col-hint { font-size: 0.75rem; color: var(--muted); margin: 0 0 0.5rem 0; line-height: 1.4; }
+    .csv-export-list { list-style: none; margin: 0; padding: 0; min-height: 180px; max-height: 280px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+    .csv-export-item { padding: 0.5rem 0.75rem; font-size: 0.875rem; cursor: grab; border-bottom: 1px solid var(--border); color: var(--text); user-select: none; transition: background 0.15s; }
+    .csv-export-item:last-child { border-bottom: none; }
+    .csv-export-item:hover { background: rgba(69,123,157,0.08); }
+    .csv-export-item.dragging { opacity: 0.55; cursor: grabbing; }
+    .csv-export-list.drag-over { outline: 2px dashed var(--accent); outline-offset: -2px; }
+    .csv-export-preview { margin-top: 1rem; padding: 0.75rem 1rem; border-radius: 10px; background: rgba(29,53,87,0.06); border: 1px solid var(--border); }
+    .csv-export-preview strong { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.35rem; }
+    .csv-export-preview pre { margin: 0; font-size: 0.75rem; white-space: pre-wrap; word-break: break-word; color: var(--text); font-family: ui-monospace, monospace; line-height: 1.4; }
+    .csv-export-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .csv-export-actions button { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; cursor: pointer; border: none; font-family: inherit; }
+    .csv-export-actions .csv-btn-secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .csv-export-actions .csv-btn-secondary:hover { background: rgba(69,123,157,0.1); }
+    .csv-export-actions .csv-btn-primary { background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; box-shadow: 0 2px 8px rgba(69,123,157,0.3); }
+    .csv-export-actions .csv-btn-primary:hover { transform: translateY(-1px); }
     .top100-list { border-radius: 1rem; border: 1px solid var(--border); background: var(--card-bg); overflow: hidden; box-shadow: 0 4px 20px rgba(29,53,87,0.06); }
     /* Top 100: use a shared grid so headers + rows align */
     .top100-columns, .top100-row-header {
@@ -134,16 +157,15 @@
         90px    /* EMIS */
         120px   /* Subject */
         140px   /* Sector */
-        80px    /* % */
+        minmax(118px, 1fr)  /* KPI percentage */
         90px;   /* Score/60 */
       align-items: center;
       column-gap: 0.75rem;
     }
 
     .top100-columns { position: sticky; top: 0; z-index: 5; padding: 0.6rem 1rem; background: rgba(248, 250, 252, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
-    .top100-columns .top100-expand { background: transparent; border-style: dashed; font-weight: 800; }
-    .top100-columns .top100-rank, .top100-columns .top100-name, .top100-columns .top100-school, .top100-columns .top100-emis, .top100-columns .top100-subject, .top100-columns .top100-sector, .top100-columns .top100-pct, .top100-columns .top100-score60 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
-    .top100-columns .top100-name { font-weight: 800; }
+    .top100-columns .top100-expand { background: transparent; border-style: dashed; font-weight: 700; }
+    .top100-columns .top100-rank, .top100-columns .top100-name, .top100-columns .top100-school, .top100-columns .top100-emis, .top100-columns .top100-subject, .top100-columns .top100-sector, .top100-columns .top100-pct, .top100-columns .top100-score60 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
     .top100-row { border-bottom: 1px solid var(--border); }
     .top100-row:last-child { border-bottom: none; }
     .top100-row-header { padding: 0.75rem 1rem; cursor: pointer; transition: background 0.2s; min-height: 52px; }
@@ -1596,7 +1618,210 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           if (str.indexOf(',') !== -1 || str.indexOf('"') !== -1 || str.indexOf('\n') !== -1) return '"' + str.replace(/"/g, '""') + '"';
           return str;
         }
-        var _top100State = { mode: 'simple', proportions: {} };
+        var _top100State = { mode: 'simple', proportions: {}, csvExportOrder: null };
+        function getTop100CsvAllIds() {
+          var ids = ['rank', 'name', 'sector', 'school', 'emis', 'overall_pct', 'score60', 'observations', 'subject', 'designation', 'gender', 'qualifications', 'head_name', 'head_contact'];
+          if (ACR_KPI_SECTIONS && ACR_KPI_SECTIONS.length) {
+            for (var i = 0; i < ACR_KPI_SECTIONS.length; i++) ids.push('kpi_' + i);
+          }
+          return ids;
+        }
+        function getTop100CsvDefaultOrder() {
+          return getTop100CsvAllIds().slice();
+        }
+        function getTop100CsvLabel(id) {
+          if (id.indexOf('kpi_') === 0) {
+            var ki = parseInt(id.slice(4), 10);
+            return (ACR_KPI_SECTIONS && ACR_KPI_SECTIONS[ki]) ? ACR_KPI_SECTIONS[ki].section : id;
+          }
+          var labels = {
+            rank: 'Rank', name: 'Name', sector: 'Sector', school: 'School', emis: 'EMIS',
+            overall_pct: 'KPI percentage', score60: 'Score/60', observations: 'Observations',
+            subject: 'Subject', designation: 'Designation', gender: 'Gender', qualifications: 'Qualifications',
+            head_name: 'Head Name', head_contact: 'Head Contact'
+          };
+          return labels[id] || id;
+        }
+        function getTop100CsvCellValue(t, rank, id, heads) {
+          var emis = t.EMIS != null ? t.EMIS : (t.emis != null ? t.emis : (t.School_EMIS != null ? t.School_EMIS : t.school_emis));
+          var headInfo = (heads && heads.length) ? getHeadByEmis(emis, heads) : null;
+          var headName = headInfo ? (headInfo.head_names || headInfo.head_name || '') : '';
+          var headContact = headInfo ? (headInfo.head_contact_numbers || headInfo.head_contact_number || headInfo.contact_number || '') : '';
+          if (id === 'rank') return rank;
+          if (id === 'name') return t.teacher_name || t.Teacher_Name || '';
+          if (id === 'sector') return t.Sector || t.sector || '';
+          if (id === 'school') return t.School || t.school || '';
+          if (id === 'emis') return emis != null ? emis : '';
+          if (id === 'overall_pct') return t.overall_percentage != null ? Number(t.overall_percentage) : '';
+          if (id === 'score60') return t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : '';
+          if (id === 'observations') return t.observation_count != null ? Number(t.observation_count) : '';
+          if (id === 'subject') return t.subject || t.Subject || '';
+          if (id === 'designation') return t.service_designation || t.designation || '';
+          if (id === 'gender') return t.gender || t.Gender || '';
+          if (id === 'qualifications') return t.qualifications || t.Qualifications || '';
+          if (id === 'head_name') return headName;
+          if (id === 'head_contact') return headContact;
+          if (id.indexOf('kpi_') === 0) {
+            var ki = parseInt(id.slice(4), 10);
+            if (!isNaN(ki) && t.kpis && t.kpis[ki] && t.kpis[ki].value != null) return t.kpis[ki].value;
+            return '';
+          }
+          return '';
+        }
+        function openTop100CsvExportModal(dashboardData, getDisplayedTeachers) {
+          var allIds = getTop100CsvAllIds();
+          if (_top100State.csvExportOrder == null) {
+            _top100State.csvExportOrder = [];
+          } else {
+            var seen = {};
+            var filtered = _top100State.csvExportOrder.filter(function(id) {
+              if (allIds.indexOf(id) === -1 || seen[id]) return false;
+              seen[id] = true;
+              return true;
+            });
+            _top100State.csvExportOrder.length = 0;
+            filtered.forEach(function(id) { _top100State.csvExportOrder.push(id); });
+          }
+          var orderIds = _top100State.csvExportOrder;
+          var backdrop = el('div', { className: 'csv-export-modal-backdrop' });
+          var modal = el('div', { className: 'csv-export-modal' });
+          modal.addEventListener('click', function(e) { e.stopPropagation(); });
+          var orderUl = el('ul', { className: 'csv-export-list' });
+          var availUl = el('ul', { className: 'csv-export-list' });
+          var previewPre = el('pre', {});
+          function availableIds() {
+            return allIds.filter(function(id) { return orderIds.indexOf(id) === -1; });
+          }
+          function updatePreview() {
+            var headers = orderIds.map(getTop100CsvLabel);
+            previewPre.textContent = headers.length ? headers.map(csvEscape).join(',') : '(Add at least one column from the right.)';
+          }
+          function bindDrag(li, listType) {
+            li.setAttribute('draggable', 'true');
+            li.addEventListener('dragstart', function(e) {
+              e.dataTransfer.setData('text/plain', li.dataset.colId);
+              e.dataTransfer.setData('application/x-csv-list', listType);
+              e.dataTransfer.effectAllowed = 'move';
+              li.classList.add('dragging');
+            });
+            li.addEventListener('dragend', function() { li.classList.remove('dragging'); orderUl.classList.remove('drag-over'); availUl.classList.remove('drag-over'); });
+          }
+          function insertIndexFromEvent(ul, clientY) {
+            var children = [].slice.call(ul.querySelectorAll('.csv-export-item'));
+            for (var i = 0; i < children.length; i++) {
+              var r = children[i].getBoundingClientRect();
+              if (clientY < r.top + r.height / 2) return i;
+            }
+            return children.length;
+          }
+          function refreshLists() {
+            orderUl.innerHTML = '';
+            availUl.innerHTML = '';
+            orderIds.forEach(function(id) {
+              var li = el('li', { className: 'csv-export-item', 'data-col-id': id }, getTop100CsvLabel(id));
+              bindDrag(li, 'order');
+              orderUl.appendChild(li);
+            });
+            availableIds().forEach(function(id) {
+              var li = el('li', { className: 'csv-export-item', 'data-col-id': id }, getTop100CsvLabel(id));
+              bindDrag(li, 'available');
+              availUl.appendChild(li);
+            });
+            updatePreview();
+          }
+          function setupDropZone(ul, listType) {
+            ul.addEventListener('dragover', function(e) {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              ul.classList.add('drag-over');
+            });
+            ul.addEventListener('dragleave', function() { ul.classList.remove('drag-over'); });
+            ul.addEventListener('drop', function(e) {
+              e.preventDefault();
+              ul.classList.remove('drag-over');
+              var id = e.dataTransfer.getData('text/plain');
+              var from = e.dataTransfer.getData('application/x-csv-list');
+              if (!id || allIds.indexOf(id) === -1) return;
+              var insertIdx = insertIndexFromEvent(ul, e.clientY);
+              var oldIdx = orderIds.indexOf(id);
+              if (listType === 'order') {
+                if (from === 'order') {
+                  if (oldIdx !== -1) orderIds.splice(oldIdx, 1);
+                  if (oldIdx !== -1 && insertIdx > oldIdx) insertIdx--;
+                  orderIds.splice(Math.max(0, Math.min(insertIdx, orderIds.length)), 0, id);
+                } else if (from === 'available') {
+                  if (oldIdx === -1) orderIds.splice(Math.max(0, Math.min(insertIdx, orderIds.length)), 0, id);
+                }
+              } else if (listType === 'available' && from === 'order') {
+                if (oldIdx !== -1) orderIds.splice(oldIdx, 1);
+              }
+              _top100State.csvExportOrder = orderIds.slice();
+              refreshLists();
+            });
+          }
+          setupDropZone(orderUl, 'order');
+          setupDropZone(availUl, 'available');
+          refreshLists();
+          modal.appendChild(el('h3', {}, 'Customize Top 100 CSV export'));
+          modal.appendChild(el('p', { className: 'csv-export-modal-sub' }, 'The right side lists every column you can export. Drag columns from the right into the left list to build your CSV (top = first column). Reorder on the left as needed. Drag back to the right to remove a column from the export.'));
+          modal.appendChild(el('div', { className: 'csv-export-columns' }, [
+            el('div', { className: 'csv-export-col' }, [
+              el('h4', {}, 'CSV column order'),
+              el('p', { className: 'csv-export-col-hint' }, 'Your export columns only — start empty; drag here from the right to design your file.'),
+              orderUl
+            ]),
+            el('div', { className: 'csv-export-col' }, [
+              el('h4', {}, 'All available columns'),
+              el('p', { className: 'csv-export-col-hint' }, 'Complete list of fields. Drag into the left column to include each one.'),
+              availUl
+            ])
+          ]));
+          modal.appendChild(el('div', { className: 'csv-export-preview' }, [
+            el('strong', {}, 'CSV header preview'),
+            previewPre
+          ]));
+          var actions = el('div', { className: 'csv-export-actions' });
+          var btnReset = el('button', { type: 'button', className: 'csv-btn-secondary' }, 'Clear order (all to right)');
+          var btnSuggested = el('button', { type: 'button', className: 'csv-btn-secondary' }, 'Suggested column order');
+          var btnCancel = el('button', { type: 'button', className: 'csv-btn-secondary' }, 'Cancel');
+          var btnDownload = el('button', { type: 'button', className: 'csv-btn-primary' }, 'Download CSV');
+          btnReset.addEventListener('click', function() {
+            orderIds.length = 0;
+            refreshLists();
+          });
+          btnSuggested.addEventListener('click', function() {
+            orderIds.length = 0;
+            getTop100CsvDefaultOrder().forEach(function(x) { orderIds.push(x); });
+            refreshLists();
+          });
+          btnCancel.addEventListener('click', function() { document.body.removeChild(backdrop); });
+          btnDownload.addEventListener('click', function() {
+            if (!orderIds.length) { alert('Add at least one column to export.'); return; }
+            var list = typeof getDisplayedTeachers === 'function' ? getDisplayedTeachers() : [];
+            var heads = (dashboardData && dashboardData.heads) ? dashboardData.heads : [];
+            var headerLabels = orderIds.map(getTop100CsvLabel);
+            var rows = [headerLabels.map(csvEscape).join(',')];
+            list.forEach(function(t, i) {
+              var rank = i + 1;
+              var row = orderIds.map(function(cid) { return getTop100CsvCellValue(t, rank, cid, heads); });
+              rows.push(row.map(csvEscape).join(','));
+            });
+            var csv = rows.join('\r\n');
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
+            a.download = 'top100_teachers_' + (new Date().toISOString().slice(0, 10)) + '.csv';
+            a.click();
+            URL.revokeObjectURL(a.href);
+          });
+          actions.appendChild(btnReset);
+          actions.appendChild(btnSuggested);
+          actions.appendChild(btnCancel);
+          actions.appendChild(btnDownload);
+          modal.appendChild(actions);
+          backdrop.appendChild(modal);
+          backdrop.addEventListener('click', function() { document.body.removeChild(backdrop); });
+          document.body.appendChild(backdrop);
+        }
         function getTop100List(dashboardData) {
           var teachers = (dashboardData && dashboardData.teachers) ? dashboardData.teachers.slice() : [];
           if (teachers.length === 0) return [];
@@ -1710,7 +1935,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             el('span', { className: 'top100-emis' }, 'EMIS'),
             el('span', { className: 'top100-subject' }, 'Subject'),
             el('span', { className: 'top100-sector' }, 'Sector'),
-            el('span', { className: 'top100-pct' }, '%'),
+            el('span', { className: 'top100-pct' }, 'KPI percentage'),
             el('span', { className: 'top100-score60' }, 'Score/60')
           ]);
           var toggleWrap = el('div', { className: 'top100-toggle-wrap' });
@@ -1738,30 +1963,9 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             toggleWrap.appendChild(toggleBtn);
             section.appendChild(toggleWrap);
           } else { toggleWrap.style.display = 'none'; }
-          var exportBtn = el('button', { type: 'button', className: 'top100-export-btn' }, 'Export CSV');
+          var exportBtn = el('button', { type: 'button', className: 'top100-export-btn' }, 'Customize & export CSV');
           exportBtn.addEventListener('click', function() {
-            var heads = (dashboardData && dashboardData.heads) ? dashboardData.heads : [];
-            var headers = ['Rank', 'Name', 'Sector', 'School', 'Overall %', 'Score/60', 'Observations', 'Subject', 'Designation', 'Gender', 'Qualifications', 'Head Name', 'Head Contact'];
-            if (ACR_KPI_SECTIONS && ACR_KPI_SECTIONS.length) ACR_KPI_SECTIONS.forEach(function(s) { headers.push(s.section); });
-            var rows = [headers.map(csvEscape).join(',')];
-            var numKpiCols = ACR_KPI_SECTIONS ? ACR_KPI_SECTIONS.length : 0;
-            displayedList.forEach(function(t, i) {
-              var emis = t.EMIS != null ? t.EMIS : (t.emis != null ? t.emis : (t.School_EMIS != null ? t.School_EMIS : t.school_emis));
-              var headInfo = getHeadByEmis(emis, heads);
-              var headName = headInfo ? (headInfo.head_names || headInfo.head_name || '') : '';
-              var headContact = headInfo ? (headInfo.head_contact_numbers || headInfo.head_contact_number || headInfo.contact_number || '') : '';
-              var score60 = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : '';
-              var obs = t.observation_count != null ? Number(t.observation_count) : '';
-              var row = [i + 1, t.teacher_name || t.Teacher_Name || '', t.Sector || t.sector || '', t.School || t.school || '', t.overall_percentage != null ? Number(t.overall_percentage) : '', score60, obs, t.subject || t.Subject || '', t.service_designation || t.designation || '', t.gender || t.Gender || '', t.qualifications || t.Qualifications || '', headName, headContact];
-              for (var ki = 0; ki < numKpiCols; ki++) row.push((t.kpis && t.kpis[ki]) ? (t.kpis[ki].value != null ? t.kpis[ki].value : '') : '');
-              rows.push(row.map(function(v) { return csvEscape(v); }).join(','));
-            });
-            var csv = rows.join('\r\n');
-            var a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-            a.download = 'top100_teachers_' + (new Date().toISOString().slice(0, 10)) + '.csv';
-            a.click();
-            URL.revokeObjectURL(a.href);
+            openTop100CsvExportModal(dashboardData, function() { return getTop100List(dashboardData); });
           });
           toolbar.appendChild(exportBtn);
           return section;
