@@ -123,17 +123,43 @@
     .top100-export-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(69,123,157,0.3); transition: transform 0.2s, box-shadow 0.2s; }
     .top100-export-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(69,123,157,0.4); }
     .top100-list { border-radius: 1rem; border: 1px solid var(--border); background: var(--card-bg); overflow: hidden; box-shadow: 0 4px 20px rgba(29,53,87,0.06); }
+    /* Top 100: use a shared grid so headers + rows align */
+    .top100-columns, .top100-row-header {
+      display: grid;
+      grid-template-columns:
+        140px   /* Action */
+        44px    /* # */
+        minmax(160px, 1.2fr)  /* Teacher name */
+        minmax(180px, 1.6fr)  /* School */
+        90px    /* EMIS */
+        120px   /* Subject */
+        140px   /* Sector */
+        80px    /* % */
+        90px;   /* Score/60 */
+      align-items: center;
+      column-gap: 0.75rem;
+    }
+
+    .top100-columns { position: sticky; top: 0; z-index: 5; padding: 0.6rem 1rem; background: rgba(248, 250, 252, 0.92); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); }
+    .top100-columns .top100-expand { background: transparent; border-style: dashed; font-weight: 800; }
+    .top100-columns .top100-rank, .top100-columns .top100-name, .top100-columns .top100-school, .top100-columns .top100-emis, .top100-columns .top100-subject, .top100-columns .top100-sector, .top100-columns .top100-pct, .top100-columns .top100-score60 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .top100-columns .top100-name { font-weight: 800; }
     .top100-row { border-bottom: 1px solid var(--border); }
     .top100-row:last-child { border-bottom: none; }
-    .top100-row-header { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; cursor: pointer; transition: background 0.2s; min-height: 52px; }
+    .top100-row-header { padding: 0.75rem 1rem; cursor: pointer; transition: background 0.2s; min-height: 52px; }
     .top100-row-header:hover { background: var(--surface); }
-    .top100-expand { width: 24px; height: 24px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--muted); transition: transform 0.2s; }
-    .top100-row.expanded .top100-expand { transform: rotate(90deg); }
-    .top100-rank { min-width: 2.5rem; font-family: Outfit, sans-serif; font-weight: 700; font-size: 1rem; color: var(--muted); }
-    .top100-name { flex: 1; min-width: 0; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .top100-sector { font-size: 0.875rem; color: var(--muted); min-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .top100-pct { font-family: Outfit, sans-serif; font-weight: 700; font-size: 1rem; min-width: 3.5rem; text-align: right; }
-    .top100-score60 { font-size: 0.8125rem; color: var(--muted); min-width: 3rem; text-align: right; }
+    .top100-expand { justify-self: center; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border-radius: 999px; border: 1px solid var(--border); background: rgba(69,123,157,0.08); font-size: 0.75rem; font-weight: 700; letter-spacing: 0.02em; color: var(--muted); user-select: none; white-space: nowrap; }
+    .top100-row.expanded .top100-expand { background: rgba(69,123,157,0.14); color: var(--text); }
+    /* Center-align all columns */
+    .top100-rank, .top100-name, .top100-school, .top100-emis, .top100-subject, .top100-sector, .top100-pct, .top100-score60 { text-align: center; }
+    .top100-rank { font-family: Outfit, sans-serif; font-weight: 700; font-size: 1rem; color: var(--muted); }
+    .top100-name { min-width: 0; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top100-school { font-size: 0.875rem; color: var(--muted); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top100-emis { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top100-subject { font-size: 0.8125rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top100-sector { font-size: 0.875rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .top100-pct { font-family: Outfit, sans-serif; font-weight: 700; font-size: 1rem; }
+    .top100-score60 { font-size: 0.8125rem; color: var(--muted); }
     .top100-row-detail { display: none; padding: 1rem 1rem 1rem 3.5rem; background: rgba(29,53,87,0.04); border-top: 1px solid var(--border); font-size: 0.875rem; }
     .top100-row.expanded .top100-row-detail { display: block; }
     .top100-detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem 1.5rem; }
@@ -1598,20 +1624,29 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
         function createTop100Row(t, rank, openTeacher) {
           var pct = Number(t.overall_percentage) || 0;
           var score60 = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60).toFixed(1) : '—';
+          var school = (t.School != null ? t.School : (t.school != null ? t.school : '—'));
+          var subject = (t.subject != null ? t.subject : (t.Subject != null ? t.Subject : '—'));
+          var emis = (t.EMIS != null ? t.EMIS : (t.emis != null ? t.emis : (t.School_EMIS != null ? t.School_EMIS : (t.school_emis != null ? t.school_emis : '—'))));
           var row = el('div', { className: 'top100-row' });
           var header = el('div', { className: 'top100-row-header' });
-          var expandIcon = el('span', { className: 'top100-expand' }, '▶');
+          var expandIcon = el('span', { className: 'top100-expand', title: 'Click to expand / collapse' }, 'Click to expand');
           header.appendChild(expandIcon);
           header.appendChild(el('span', { className: 'top100-rank' }, String(rank)));
           header.appendChild(el('span', { className: 'top100-name' }, (t.teacher_name || t.Teacher_Name || '—')));
+          header.appendChild(el('span', { className: 'top100-school', title: String(school || '—') }, String(school || '—')));
+          header.appendChild(el('span', { className: 'top100-emis', title: String(emis || '—') }, String(emis || '—')));
+          header.appendChild(el('span', { className: 'top100-subject', title: String(subject || '—') }, String(subject || '—')));
           header.appendChild(el('span', { className: 'top100-sector' }, (t.Sector || t.sector || '—')));
           header.appendChild(el('span', { className: 'top100-pct' }, pct.toFixed(1) + '%'));
           header.appendChild(el('span', { className: 'top100-score60' }, score60 + '/60'));
-          header.addEventListener('click', function() { row.classList.toggle('expanded'); });
+          header.addEventListener('click', function() {
+            row.classList.toggle('expanded');
+            expandIcon.textContent = row.classList.contains('expanded') ? 'Click to collapse' : 'Click to expand';
+          });
           row.appendChild(header);
           var detail = el('div', { className: 'top100-row-detail' });
           var grid = el('div', { className: 'top100-detail-grid' });
-          [['School', t.School || t.school || '—'], ['Subject', t.subject || t.Subject || '—'], ['Designation', t.service_designation || t.designation || '—'], ['Observations', (t.observation_count != null ? t.observation_count : '—')], ['Gender', t.gender || t.Gender || '—'], ['Qualifications', t.qualifications || t.Qualifications || '—']].forEach(function(pair) { grid.appendChild(el('div', { className: 'top100-detail-item' }, [el('span', { className: 'k' }, pair[0] + ':'), el('span', { className: 'v' }, String(pair[1]))])); });
+          [['School', school || '—'], ['EMIS', emis || '—'], ['Subject', subject || '—'], ['Designation', t.service_designation || t.designation || '—'], ['Observations', (t.observation_count != null ? t.observation_count : '—')], ['Gender', t.gender || t.Gender || '—'], ['Qualifications', t.qualifications || t.Qualifications || '—']].forEach(function(pair) { grid.appendChild(el('div', { className: 'top100-detail-item' }, [el('span', { className: 'k' }, pair[0] + ':'), el('span', { className: 'v' }, String(pair[1]))])); });
           if (t.kpis && t.kpis.length) t.kpis.forEach(function(k) { grid.appendChild(el('div', { className: 'top100-detail-item' }, [el('span', { className: 'k' }, (k.name || '') + ':'), el('span', { className: 'v' }, (k.value != null ? k.value : '—'))])); });
           var viewBtn = el('button', { type: 'button', className: 'nav-btn', style: { marginTop: '0.75rem' } }, 'View full report card');
           viewBtn.addEventListener('click', function(e) { e.stopPropagation(); if (typeof openTeacher === 'function') openTeacher(t); });
@@ -1629,7 +1664,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           var sectorNames = Object.keys(bySector).sort();
           var section = el('section', { className: 'top100-section' });
           var toolbar = el('div', { className: 'top100-toolbar' });
-          toolbar.appendChild(el('h2', { className: 'section-heading', style: { margin: 0 } }, 'Top 100 Teachers (by average overall_percentage)'));
+          toolbar.appendChild(el('h2', { className: 'section-heading', style: { margin: 0 } }, 'Top 100 teachers by ACR KPIs'));
           var modeRow = el('div', { className: 'top100-mode-row' });
           modeRow.appendChild(el('span', { className: 'top100-mode-label' }, 'List by:'));
           var simpleRadio = el('input', { type: 'radio', name: 'top100mode', id: 'top100-simple', checked: _top100State.mode === 'simple' });
@@ -1667,11 +1702,23 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           simpleRadio.addEventListener('change', function() { if (this.checked) { _top100State.mode = 'simple'; proportionBox.classList.remove('visible'); refreshList(); } });
           propRadio.addEventListener('change', function() { if (this.checked) { _top100State.mode = 'proportional'; proportionBox.classList.add('visible'); refreshList(); } });
           var listEl = el('div', { className: 'top100-list collapsed' });
+          var columnsEl = el('div', { className: 'top100-columns' }, [
+            el('span', { className: 'top100-expand' }, 'Action'),
+            el('span', { className: 'top100-rank' }, '#'),
+            el('span', { className: 'top100-name' }, 'Teacher name'),
+            el('span', { className: 'top100-school' }, 'School'),
+            el('span', { className: 'top100-emis' }, 'EMIS'),
+            el('span', { className: 'top100-subject' }, 'Subject'),
+            el('span', { className: 'top100-sector' }, 'Sector'),
+            el('span', { className: 'top100-pct' }, '%'),
+            el('span', { className: 'top100-score60' }, 'Score/60')
+          ]);
           var toggleWrap = el('div', { className: 'top100-toggle-wrap' });
           var toggleBtn = el('button', { type: 'button', className: 'top100-toggle-btn' }, 'Show full list (' + displayedList.length + ')');
           function refreshList() {
             displayedList = getTop100List(dashboardData);
             listEl.replaceChildren();
+            listEl.appendChild(columnsEl);
             listEl.classList.add('collapsed');
             displayedList.forEach(function(t, i) { listEl.appendChild(createTop100Row(t, i + 1, openTeacher)); });
             toggleBtn.textContent = displayedList.length > 5 ? 'Show full list (' + displayedList.length + ')' : '';
@@ -1681,6 +1728,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             proportionBox.querySelectorAll('input[type="number"]').forEach(function(inp) { var sec = inp.getAttribute('data-sector'); if (sec) _top100State.proportions[sec] = parseInt(inp.value, 10) || 0; });
             refreshList();
           });
+          listEl.appendChild(columnsEl);
           displayedList.forEach(function(t, i) { listEl.appendChild(createTop100Row(t, i + 1, openTeacher)); });
           section.appendChild(listEl);
           if (displayedList.length > 5) {
