@@ -175,7 +175,6 @@
     .top100-columns, .top100-row-header {
       display: grid;
       grid-template-columns:
-        140px   /* Action */
         44px    /* # */
         minmax(160px, 1.2fr)  /* Teacher name */
         minmax(180px, 1.6fr)  /* School */
@@ -183,7 +182,8 @@
         120px   /* Subject */
         140px   /* Sector */
         minmax(118px, 1fr)  /* KPI percentage */
-        90px;   /* Score/60 */
+        90px    /* Score/60 */
+        140px;  /* Action */
       align-items: center;
       column-gap: 0.75rem;
     }
@@ -1880,8 +1880,6 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           var emis = (t.EMIS != null ? t.EMIS : (t.emis != null ? t.emis : (t.School_EMIS != null ? t.School_EMIS : (t.school_emis != null ? t.school_emis : '—'))));
           var row = el('div', { className: 'top100-row' });
           var header = el('div', { className: 'top100-row-header' });
-          var expandIcon = el('span', { className: 'top100-expand', title: 'Click to expand / collapse' }, 'Click to expand');
-          header.appendChild(expandIcon);
           header.appendChild(el('span', { className: 'top100-rank' }, String(rank)));
           header.appendChild(el('span', { className: 'top100-name' }, (t.teacher_name || t.Teacher_Name || '—')));
           header.appendChild(el('span', { className: 'top100-school', title: String(school || '—') }, String(school || '—')));
@@ -1890,9 +1888,11 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           header.appendChild(el('span', { className: 'top100-sector' }, (t.Sector || t.sector || '—')));
           header.appendChild(el('span', { className: 'top100-pct' }, pct.toFixed(1) + '%'));
           header.appendChild(el('span', { className: 'top100-score60' }, score60 + '/60'));
+          var expandIcon = el('span', { className: 'top100-expand', title: 'See details / hide details' }, 'See details');
+          header.appendChild(expandIcon);
           header.addEventListener('click', function() {
             row.classList.toggle('expanded');
-            expandIcon.textContent = row.classList.contains('expanded') ? 'Click to collapse' : 'Click to expand';
+            expandIcon.textContent = row.classList.contains('expanded') ? 'Hide details' : 'See details';
           });
           row.appendChild(header);
           var detail = el('div', { className: 'top100-row-detail' });
@@ -1922,7 +1922,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           var propRadio = el('input', { type: 'radio', name: 'top100mode', id: 'top100-proportional' });
           if (_top100State.mode === 'proportional') propRadio.checked = true;
           var optionsDiv = el('div', { className: 'top100-mode-options' });
-          optionsDiv.appendChild(simpleRadio); optionsDiv.appendChild(el('label', { htmlFor: 'top100-simple' }, 'Simple top 100'));
+          optionsDiv.appendChild(simpleRadio); optionsDiv.appendChild(el('label', { htmlFor: 'top100-simple' }, 'Overall Top 100 teachers'));
           optionsDiv.appendChild(propRadio); optionsDiv.appendChild(el('label', { htmlFor: 'top100-proportional' }, 'Proportional by sector'));
           modeRow.appendChild(optionsDiv);
           section.appendChild(toolbar);
@@ -1954,7 +1954,6 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           propRadio.addEventListener('change', function() { if (this.checked) { _top100State.mode = 'proportional'; proportionBox.classList.add('visible'); refreshList(); } });
           var listEl = el('div', { className: 'top100-list collapsed' });
           var columnsEl = el('div', { className: 'top100-columns' }, [
-            el('span', { className: 'top100-expand' }, 'Action'),
             el('span', { className: 'top100-rank' }, '#'),
             el('span', { className: 'top100-name' }, 'Teacher name'),
             el('span', { className: 'top100-school' }, 'School'),
@@ -1962,7 +1961,8 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             el('span', { className: 'top100-subject' }, 'Subject'),
             el('span', { className: 'top100-sector' }, 'Sector'),
             el('span', { className: 'top100-pct' }, 'KPI percentage'),
-            el('span', { className: 'top100-score60' }, 'Score/60')
+            el('span', { className: 'top100-score60' }, 'Score/60'),
+            el('span', { className: 'top100-expand' }, 'Action')
           ]);
           var toggleWrap = el('div', { className: 'top100-toggle-wrap' });
           var toggleBtn = el('button', { type: 'button', className: 'top100-toggle-btn' }, 'Show full list (' + displayedList.length + ')');
