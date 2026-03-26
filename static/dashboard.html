@@ -41,6 +41,9 @@
     .nav-btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; background: transparent; color: var(--muted); border: none; cursor: pointer; }
     .nav-btn:hover { color: var(--text); background: var(--surface); }
     .nav-btn.active { background: var(--surface); color: var(--text); }
+    .pilot-filter-btn { border: 1px solid rgba(69,123,157,0.35); background: rgba(69,123,157,0.12); color: #1d3557; font-weight: 700; box-shadow: 0 2px 8px rgba(69,123,157,0.16); transition: transform 0.15s, box-shadow 0.2s, background 0.2s, color 0.2s; }
+    .pilot-filter-btn:hover { transform: translateY(-1px); background: rgba(69,123,157,0.2); box-shadow: 0 4px 14px rgba(69,123,157,0.25); }
+    .pilot-filter-btn.active { border-color: rgba(34,197,94,0.55); background: linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.16)); color: #14532d; box-shadow: 0 0 0 2px rgba(34,197,94,0.2), 0 6px 18px rgba(22,163,74,0.28); }
     .nav-select { padding: 0.5rem 2rem 0.5rem 0.75rem; border-radius: 14px; font-size: 0.875rem; font-weight: 500; border: 3px solid transparent; cursor: pointer; min-width: 180px; font-family: inherit; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23457b9d' stroke-width='2'%3E%3Cpath d='M2 4l4 4 4-4'/%3E%3C/svg%3E"), linear-gradient(var(--surface), var(--surface)), linear-gradient(135deg, #457b9d, #a8dadc); background-repeat: no-repeat, repeat, repeat; background-position: right 0.5rem center, 0 0, 0 0; background-origin: padding-box, padding-box, border-box; background-clip: padding-box, padding-box, border-box; background-size: 12px 12px, 100% 100%, 100% 100%; color: var(--text); box-shadow: 0 0 0 1px rgba(69,123,157,0.3), 0 4px 12px rgba(69,123,157,0.12); }
     .nav-select option { background: #fff; color: #111; }
     .nav-select:hover { box-shadow: 0 0 0 2px var(--accent), 0 6px 20px rgba(69,123,157,0.2); }
@@ -123,6 +126,7 @@
     .fico-notice { margin-bottom: 1.25rem; padding: 1rem 1.25rem; border-radius: 1rem; border: 1px solid rgba(69,123,157,0.35); background: linear-gradient(135deg, rgba(69,123,157,0.08), rgba(168,218,220,0.12)); box-shadow: 0 4px 16px rgba(29,53,87,0.06); }
     .fico-notice p { margin: 0 0 0.65rem 0; font-size: 0.9rem; line-height: 1.55; color: var(--text); }
     .fico-notice p:last-child { margin-bottom: 0; }
+    .fico-notice-actions { display: flex; justify-content: flex-end; margin-top: 0.35rem; }
     .fico-notice-link { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.35rem; padding: 0.45rem 0.9rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; font-family: inherit; color: #fff; background: linear-gradient(135deg, #457b9d, #1d3557); border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(69,123,157,0.25); }
     .fico-notice-link:hover { filter: brightness(1.05); transform: translateY(-1px); }
     .fico-kpi-modal-backdrop { position: fixed; inset: 0; z-index: 210; background: rgba(15, 23, 42, 0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; }
@@ -1397,8 +1401,159 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
         var currentSectorName = null;
         var currentSchoolName = null;
         var currentTeacherId = null;
+        var pilotOnlyMode = false;
         var refreshIntervalId = null;
         var applyingFromHistory = false;
+        var PILOT_EMIS_SET = {
+          '463': true, '404': true, '762': true, '920': true, '555': true,
+          '630': true, '241': true, '280': true, '269': true
+        };
+
+        function normalizeEmis(value) {
+          if (value == null) return '';
+          var s = String(value).trim();
+          if (!s) return '';
+          var n = parseInt(s, 10);
+          return isNaN(n) ? s : String(n);
+        }
+        function getTeacherEmis(t) {
+          return normalizeEmis(t.EMIS != null ? t.EMIS : (t.emis != null ? t.emis : (t.School_EMIS != null ? t.School_EMIS : t.school_emis)));
+        }
+        function isPilotTeacher(t) {
+          var e = getTeacherEmis(t);
+          return !!(e && PILOT_EMIS_SET[e]);
+        }
+        function getActiveOverviewData() {
+          if (!pilotOnlyMode) return dashboardData;
+          var sectors = (dashboardData.sectors || []).map(function(s) {
+            var ts = (s.teachers || []).filter(isPilotTeacher);
+            var avgPct = ts.length ? ts.reduce(function(a, t) { return a + (Number(t.overall_percentage) || 0); }, 0) / ts.length : 0;
+            return Object.assign({}, s, { teachers: ts, teacher_count: ts.length, avg_percentage: Math.round(avgPct * 10) / 10 });
+          }).filter(function(s) { return s.teachers && s.teachers.length > 0; });
+          var uniq = {};
+          var teachers = [];
+          sectors.forEach(function(s) {
+            (s.teachers || []).forEach(function(t) {
+              var k = (t.user_id != null ? t.user_id : (t.User_ID != null ? t.User_ID : (t.teacher_name || t.Teacher_Name || ''))).toString().trim();
+              if (!k) k = Math.random().toString(36).slice(2);
+              if (!uniq[k]) { uniq[k] = true; teachers.push(t); }
+            });
+          });
+          var avgPct = teachers.length ? teachers.reduce(function(a, t) { return a + (Number(t.overall_percentage) || 0); }, 0) / teachers.length : 0;
+          var scoreVals = teachers.map(function(t) { return t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : null; }).filter(function(v) { return v != null && !isNaN(v); });
+          var totalObs = teachers.reduce(function(a, t) {
+            var n = t.observation_count != null ? Number(t.observation_count) : 1;
+            if (isNaN(n) || n <= 0) n = 1;
+            return a + n;
+          }, 0);
+          var overall = Object.assign({}, dashboardData.overall || {});
+          overall.sector_count = sectors.length;
+          overall.teacher_count = teachers.length;
+          overall.total_teachers = teachers.length;
+          overall.total_observations = totalObs;
+          overall.avg_percentage = Math.round(avgPct * 10) / 10;
+          overall.avg_score_out_of_60 = scoreVals.length ? Math.round((scoreVals.reduce(function(a, v) { return a + v; }, 0) / scoreVals.length) * 10) / 10 : null;
+          return Object.assign({}, dashboardData, { sectors: sectors, teachers: teachers, overall: overall });
+        }
+        function avgPctList(list) {
+          if (!list || !list.length) return 0;
+          var sum = 0;
+          for (var i = 0; i < list.length; i++) sum += Number(list[i].overall_percentage) || 0;
+          return sum / list.length;
+        }
+        function asDate(v) {
+          if (v == null) return null;
+          var d = new Date(v);
+          if (!isNaN(d.getTime())) return d;
+          return null;
+        }
+        function ageCohort(t) {
+          var dob = asDate(t.date_of_birth || t.Date_Of_Birth || t.dob || t.DOB);
+          if (!dob) return 'Unknown';
+          var age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+          if (age < 30) return '<30';
+          if (age < 40) return '30-40';
+          if (age < 50) return '40-50';
+          return '50+';
+        }
+        function experienceCohort(t) {
+          var jd = asDate(t.joining_date || t.Joining_Date || t.join_date || t.hire_date);
+          if (!jd) return 'Unknown';
+          var years = (Date.now() - jd.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+          if (years < 5) return '0-5 yrs';
+          if (years < 10) return '5-10 yrs';
+          if (years < 20) return '10-20 yrs';
+          return '20+ yrs';
+        }
+        function qualCohort(t) {
+          var q = String(t.qualifications || t.Qualifications || '').trim().toLowerCase();
+          if (!q) return 'Unknown';
+          if (q.indexOf('phd') !== -1 || q.indexOf('doctorate') !== -1) return 'PhD/Doctorate';
+          if (q.indexOf('master') !== -1 || q.indexOf('ms ') !== -1 || q.indexOf('m.sc') !== -1 || q.indexOf('m.ed') !== -1) return 'Master';
+          if (q.indexOf('bachelor') !== -1 || q.indexOf('b.ed') !== -1 || q.indexOf('ba ') !== -1 || q.indexOf('bsc') !== -1) return 'Bachelor';
+          return 'Other';
+        }
+        function subjectCohort(t) {
+          var raw = t.subject != null ? t.subject : t.Subject;
+          if (raw == null) return 'Other';
+          var s = String(raw).trim();
+          if (!s) return 'Other';
+          var lower = s.toLowerCase();
+          if (lower === 'eng' || lower === 'english' || lower.indexOf('english') !== -1) return 'ENG';
+          if (lower === 'urdu' || lower.indexOf('urdu') !== -1) return 'URDU';
+          if (lower === 'math' || lower === 'maths' || lower.indexOf('math') !== -1 || lower.indexOf('mathematics') !== -1) return 'Math';
+          return s;
+        }
+        function groupAndAgg(list, keyFn, orderKeys) {
+          var groups = {};
+          (list || []).forEach(function(t) {
+            var k = keyFn(t);
+            if (!groups[k]) groups[k] = [];
+            groups[k].push(t);
+          });
+          var keys = orderKeys || Object.keys(groups).sort();
+          var out = keys.map(function(k) {
+            var g = groups[k] || [];
+            return { name: k, teacher_count: g.length, avg_percentage: Math.round(avgPctList(g) * 10) / 10 };
+          });
+          return out.filter(function(x) { return x.name !== 'Unknown' && x.teacher_count > 0; });
+        }
+        function buildReportsForOverview(activeData) {
+          var teachers = (activeData && activeData.teachers) || [];
+          var sectors = (activeData && activeData.sectors) || [];
+          var age = groupAndAgg(teachers, ageCohort, ['<30', '30-40', '40-50', '50+', 'Unknown']);
+          var gender = groupAndAgg(teachers, function(t) {
+            var g = String(t.gender || t.Gender || 'Unknown').trim();
+            return g || 'Unknown';
+          });
+          var qualification = groupAndAgg(teachers, qualCohort, ['PhD/Doctorate', 'Master', 'Bachelor', 'Other', 'Unknown']).map(function(g) {
+            return g.name === 'Other' ? { name: 'Unknown', avg_percentage: g.avg_percentage, teacher_count: g.teacher_count } : g;
+          });
+          var experience = groupAndAgg(teachers, experienceCohort, ['0-5 yrs', '5-10 yrs', '10-20 yrs', '20+ yrs', 'Unknown']);
+          var subjectKeys = ['ENG', 'URDU', 'Math'];
+          var subject_by_sector = [];
+          sectors.forEach(function(s) {
+            var bySub = {};
+            (s.teachers || []).forEach(function(t) {
+              var sk = subjectCohort(t);
+              if (!bySub[sk]) bySub[sk] = [];
+              bySub[sk].push(t);
+            });
+            var row = { sector: s.name };
+            subjectKeys.forEach(function(sk) {
+              var obsList = bySub[sk] || [];
+              row[sk] = obsList.length ? Math.round(avgPctList(obsList) * 10) / 10 : 0;
+              row[sk + '_teacher_count'] = obsList.length;
+              row[sk + '_observation_count'] = obsList.reduce(function(a, t) {
+                var n = t.observation_count != null ? Number(t.observation_count) : 1;
+                if (isNaN(n) || n <= 0) n = 1;
+                return a + n;
+              }, 0);
+            });
+            subject_by_sector.push(row);
+          });
+          return { age: age, gender: gender, qualification: qualification, experience: experience, subject_by_sector: subject_by_sector };
+        }
 
         function getUrlParams() { return new URLSearchParams(window.location.search); }
         function viewToParam() {
@@ -1720,7 +1875,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           }
           function updatePreview() {
             var headers = orderIds.map(getTop100CsvLabel);
-            previewPre.textContent = headers.length ? headers.map(csvEscape).join(',') : '(Add at least one column from the right.)';
+            previewPre.textContent = headers.length ? headers.map(csvEscape).join(' | ') : '(Add at least one column from the right.)';
           }
           function bindDrag(li, listType) {
             li.setAttribute('draggable', 'true');
@@ -2057,7 +2212,9 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           return el('div', { className: 'fico-notice' }, [
             el('p', {}, 'KPI scores on this dashboard are derived from FICO observations carried out by coaches during school visits. Each teacher’s metrics reflect what was recorded in those observation cycles—not a separate scoring system.'),
             el('p', {}, 'Want to see how each ACR KPI section lines up with FICO items and the points available per section?'),
-            el('button', { type: 'button', className: 'fico-notice-link', onClick: function() { openFicoKpiMappingModal(); } }, 'View KPI → FICO mapping table')
+            el('div', { className: 'fico-notice-actions' }, [
+              el('button', { type: 'button', className: 'fico-notice-link', onClick: function() { openFicoKpiMappingModal(); } }, 'View KPI → FICO mapping table')
+            ])
           ]);
         }
         function renderOverview() {
@@ -2066,17 +2223,20 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           currentSchoolName = null;
           currentTeacherId = null;
           const refreshBtn = el('button', { type: 'button', className: 'nav-btn', onClick: function(e) { refreshData(e.currentTarget); }, title: 'Refresh data from server' }, 'Refresh');
+          const pilotBtn = el('button', { type: 'button', className: 'nav-btn pilot-filter-btn' + (pilotOnlyMode ? ' active' : ''), onClick: function() { pilotOnlyMode = !pilotOnlyMode; renderOverview(); }, title: 'Show only pilot schools on overview' }, pilotOnlyMode ? 'Pilot schools: ON' : 'Pilot schools: OFF');
+          var activeData = getActiveOverviewData();
           const header = el('header', { className: 'header' }, [
             el('div', { className: 'container header-inner' }, [
               el('div', { className: 'logo' }, [
                 el('div', {}, [el('h1', {}, 'ACR-KPIs Performance Dashboard'), el('p', {}, 'Teacher profiles & KPI performance')])
               ]),
               el('nav', { className: 'nav' }, [
+                pilotBtn,
                 refreshBtn
               ])
             ])
           ]);
-          var sortedSectors = (dashboardData.sectors || []).slice().sort(function(a, b) {
+          var sortedSectors = (activeData.sectors || []).slice().sort(function(a, b) {
             var pa = Number(a.avg_percentage) || 0, pb = Number(b.avg_percentage) || 0;
             return pb - pa;
           });
@@ -2087,13 +2247,13 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
                 return renderSectorCard(s, function(sector) { return renderSectorSchools(sector); }, rank);
               }))
             : null;
-          const reports = dashboardData.reports || {};
+          const reports = buildReportsForOverview(activeData);
           const subjectColors = ['#22c55e', '#eab308', '#2563eb'];
           const ageColors = ['#3b82f6', '#60a5fa', '#93c5fd', '#c4b5fd', '#94a3b8'];
           const genderColors = ['#ec4899', '#06b6d4', '#a78bfa', '#94a3b8'];
           const qualColors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#94a3b8'];
           const expColors = ['#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#94a3b8'];
-          var teachersForSections = dashboardData.teachers || [];
+          var teachersForSections = activeData.teachers || [];
           var sectionReport = [];
           for (var si = 0; si < ACR_KPI_SECTIONS.length; si++) {
             var sec = ACR_KPI_SECTIONS[si];
@@ -2134,24 +2294,24 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             sectorSubjectChart,
             reportsGrid
           ]);
-          const overviewAvgScore60 = dashboardData.overall && dashboardData.overall.avg_score_out_of_60 != null
-            ? Number(dashboardData.overall.avg_score_out_of_60)
-            : (dashboardData.teachers && dashboardData.teachers.length
+          const overviewAvgScore60 = activeData.overall && activeData.overall.avg_score_out_of_60 != null
+            ? Number(activeData.overall.avg_score_out_of_60)
+            : (activeData.teachers && activeData.teachers.length
               ? (function() {
                   var sum = 0, n = 0;
-                  dashboardData.teachers.forEach(function(t) {
+                  activeData.teachers.forEach(function(t) {
                     var v = t.total_score_out_of_60 != null ? Number(t.total_score_out_of_60) : null;
                     if (v != null) { sum += v; n++; }
                   });
                   return n ? sum / n : null;
                 })()
               : null);
-          const top100Section = renderTop100Teachers(dashboardData, openTeacher);
+          const top100Section = renderTop100Teachers(activeData, openTeacher);
           const overviewHeading = el('h2', { className: 'section-heading overview-heading' }, 'OVERVIEW');
           const main = el('main', { className: 'container', style: { paddingTop: '1.5rem', paddingBottom: '2rem' } }, [
             overviewHeading,
             renderFicoKpiNotice(),
-            renderStats(dashboardData.overall, true, overviewAvgScore60),
+            renderStats(activeData.overall, true, overviewAvgScore60),
             top100Section,
             sectorsHeading,
             sectorsOverview,
