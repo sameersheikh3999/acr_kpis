@@ -317,6 +317,22 @@
     .panel-part-title-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
     .panel-part-title-row .panel-part-title { margin: 0; padding-bottom: 0; border-bottom: none; }
     .panel-breakdown-caption { font-family: Outfit, sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--muted); background: rgba(168, 218, 220, 0.2); border: 1px solid rgba(69, 123, 157, 0.3); border-radius: 999px; padding: 0.4rem 0.9rem; }
+    .obs-compare-block { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .obs-compare-heading { font-family: Outfit, sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.35rem 0; }
+    .obs-compare-sub { font-size: 0.75rem; color: var(--muted); margin: 0 0 0.75rem 0; line-height: 1.45; }
+    .obs-compare-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
+    .obs-compare-table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+    .obs-compare-table thead th { background: rgba(69, 123, 157, 0.08); vertical-align: bottom; }
+    .obs-compare-corner { text-align: center !important; min-width: 10rem; position: sticky; left: 0; z-index: 2; background: rgba(69, 123, 157, 0.12) !important; box-shadow: 4px 0 8px -4px rgba(0,0,0,0.1); vertical-align: middle; }
+    .obs-compare-colhead { min-width: 6.75rem; max-width: 10rem; padding: 0.5rem 0.45rem !important; border-left: 1px solid var(--border); }
+    .obs-compare-date { font-weight: 700; color: var(--text); font-size: 0.78rem; line-height: 1.25; }
+    .obs-compare-meta { font-size: 0.68rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.3; word-break: break-word; }
+    .obs-compare-tot { font-size: 0.72rem; font-weight: 600; margin-top: 0.35rem; color: var(--accent); font-feature-settings: 'tnum'; }
+    .obs-compare-table tbody td { border-top: 1px solid var(--border); padding: 0.45rem 0.45rem; text-align: center; }
+    .obs-compare-table tbody td:first-child { text-align: left; font-weight: 600; font-size: 0.78rem; position: sticky; left: 0; background: var(--surface); box-shadow: 4px 0 8px -4px rgba(0,0,0,0.12); z-index: 1; }
+    .obs-compare-cell { font-feature-settings: 'tnum'; }
+    .obs-compare-total-row td { background: rgba(168, 218, 220, 0.14); font-weight: 700; border-top: 2px solid var(--border); }
+    .obs-compare-total-row td:first-child { background: rgba(168, 218, 220, 0.22); }
     .panel-part-content { margin-top: 0; }
     .panel-summary { border-radius: 1rem; border: 1px solid var(--border); background: var(--surface); padding: 1.5rem; margin-bottom: 0.75rem; }
     .panel-summary-top { display: flex; gap: 1rem; align-items: center; }
@@ -588,6 +604,14 @@
           var avg = n ? sum / n : 0;
           return { section: s.section, avg: avg, sum: sum, n: n, maxScore: s.maxScore };
         });
+      }
+      function getTotalsFromKpis(kpis) {
+        var data = getSectionLevelData(kpis);
+        if (!data.length) return null;
+        var totalScore = data.reduce(function(a, d) { return a + d.sum; }, 0);
+        var totalMax = data.reduce(function(a, d) { return a + (d.maxScore != null ? d.maxScore * d.n : d.n * 4); }, 0);
+        var totalPct = totalMax > 0 ? (totalScore / totalMax) * 100 : 0;
+        return { totalScore: totalScore, totalMax: totalMax, totalPct: totalPct, sections: data };
       }
       function renderKpiPieChart(kpis) {
         var data = getSectionLevelData(kpis);
@@ -1015,6 +1039,7 @@
           ? 'Average across ' + teacherObservations.length + ' observations'
           : null;
         const trendChart = renderTeacherObservationTrendChart(teacherObservations);
+        const obsCompareTable = teacherObservations.length > 1 ? renderObservationBreakdownComparison(teacherObservations) : null;
         var profileWrap = el('div', { className: 'panel-profile-wrap' });
         var tabEl = el('div', { className: 'panel-profile-tab', title: 'Click to view profile data' }, [
           el('span', {}, 'Click to view profile data')
@@ -1057,7 +1082,13 @@
             el('div', { className: 'panel-part' }, [
               el('h3', { className: 'panel-part-title' }, 'Observation Score Trend'),
               el('p', { className: 'panel-part-caption', style: { fontSize: '0.75rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' } }, 'Date-wise by Observation_date'),
-              el('div', { className: 'panel-part-content' }, trendChart ? [trendChart] : [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data (Observation_date).')]),
+              el('div', { className: 'panel-part-content' }, (function() {
+                var parts = [];
+                if (trendChart) parts.push(trendChart);
+                else parts.push(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data (Observation_date).'));
+                if (obsCompareTable) parts.push(obsCompareTable);
+                return parts;
+              })()),
               el('div', { className: 'panel-part-title-row', style: { marginTop: '1.5rem' } }, [
                 el('h3', { className: 'panel-part-title' }, 'ACR-KPIs Breakdown'),
                 breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
@@ -1683,6 +1714,90 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
         var wrap = el('div', { className: 'chart-card', style: { marginTop: '0.5rem' } });
         wrap.appendChild(svg);
         return wrap;
+      }
+
+      function sortObservationsForTeacherCompare(observations) {
+        return observations.slice().map(function(o, i) { return { o: o, i: i }; }).sort(function(a, b) {
+          var da = getObservationDateStr(a.o) || '';
+          var db = getObservationDateStr(b.o) || '';
+          if (da !== db) return da.localeCompare(db);
+          return a.i - b.i;
+        }).map(function(x) { return x.o; });
+      }
+      function observationCompareColumnTitle(obs, index, sorted) {
+        var ds = getObservationDateStr(obs);
+        var datePart = ds ? formatDateDDMmmYYYY(ds) : '';
+        if (datePart && ds) {
+          var sameBefore = 0;
+          for (var k = 0; k < index; k++) {
+            if (getObservationDateStr(sorted[k]) === ds) sameBefore++;
+          }
+          if (sameBefore > 0) datePart = datePart + ' (' + (sameBefore + 1) + ')';
+        }
+        if (!datePart) datePart = 'Observation ' + (index + 1);
+        return datePart;
+      }
+      function renderObservationBreakdownComparison(observations) {
+        if (!observations || observations.length < 2) return null;
+        var sorted = sortObservationsForTeacherCompare(observations);
+        var colInfos = sorted.map(function(obs, j) {
+          var t = getTotalsFromKpis(obs.kpis);
+          var gradeRaw = (getGradeName(obs) || '').trim();
+          var gradeDisp = gradeRaw ? (/^(grade|class)\s/i.test(gradeRaw) ? gradeRaw : 'Gr. ' + gradeRaw) : '';
+          return {
+            title: observationCompareColumnTitle(obs, j, sorted),
+            meta: [getSubjectName(obs) || '—', gradeDisp || ''].filter(function(x) { return x && x !== '—'; }).join(' · ') || '—',
+            totals: t
+          };
+        });
+        var colsSections = sorted.map(function(obs) { return getSectionLevelData(obs.kpis || []); });
+        var hasAnySection = colsSections.some(function(d) { return d && d.length; });
+        if (!hasAnySection) {
+          return el('div', { className: 'obs-compare-block' }, [
+            el('h4', { className: 'obs-compare-heading' }, 'Compare observations (section scores)'),
+            el('p', { className: 'obs-compare-sub', style: { margin: 0 } }, 'KPI breakdown per observation is not available (missing kpis on observation rows).')
+          ]);
+        }
+        var headerCells = [el('th', { className: 'obs-compare-corner', scope: 'col' }, 'KPI section')];
+        sorted.forEach(function(obs, j) {
+          var info = colInfos[j];
+          var tot = info.totals;
+          var totLine = tot ? (tot.totalScore.toFixed(1) + '/' + tot.totalMax + ' · ' + tot.totalPct.toFixed(1) + '%') : '—';
+          headerCells.push(el('th', { className: 'obs-compare-colhead', scope: 'col' }, [
+            el('div', { className: 'obs-compare-date' }, info.title),
+            el('div', { className: 'obs-compare-meta' }, info.meta),
+            el('div', { className: 'obs-compare-tot' }, totLine)
+          ]));
+        });
+        var bodyRows = ACR_KPI_SECTIONS.map(function(secDef, si) {
+          var cells = [el('td', { className: 'obs-compare-section' }, secDef.section)];
+          sorted.forEach(function(obs, j) {
+            var sd = colsSections[j];
+            var cellText = '—';
+            if (sd && sd[si]) {
+              var d = sd[si];
+              var sectionMax = d.maxScore != null ? d.maxScore : (d.n * 4);
+              cellText = d.sum.toFixed(1) + '/' + sectionMax;
+            }
+            cells.push(el('td', { className: 'obs-compare-cell' }, cellText));
+          });
+          return el('tr', {}, cells);
+        });
+        var totalCells = [el('td', { className: 'obs-compare-section' }, 'Total (all sections)')];
+        sorted.forEach(function(obs, j) {
+          var tot = colInfos[j].totals;
+          var txt = tot ? (tot.totalScore.toFixed(1) + '/' + tot.totalMax + ' (' + tot.totalPct.toFixed(1) + '%)') : '—';
+          totalCells.push(el('td', { className: 'obs-compare-cell' }, txt));
+        });
+        bodyRows.push(el('tr', { className: 'obs-compare-total-row' }, totalCells));
+        return el('div', { className: 'obs-compare-block' }, [
+          el('h4', { className: 'obs-compare-heading' }, 'Compare observations (section scores)'),
+          el('p', { className: 'obs-compare-sub' }, 'Each column is one observation (same order as the chart above). Cells show section score vs max; the total row matches overall score and percentage for that visit.'),
+          el('div', { className: 'obs-compare-wrap' }, el('table', { className: 'obs-compare-table' }, [
+            el('thead', {}, el('tr', {}, headerCells)),
+            el('tbody', {}, bodyRows)
+          ]))
+        ]);
       }
 
       function renderDashboard(data) {
