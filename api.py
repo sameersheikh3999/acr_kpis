@@ -62,16 +62,29 @@ STUDENT_RESULTS_ALIASES = {
         "Roll_No",
         "roll_number",
     ],
+    "obtained_marks": [
+        "obtained_marks",
+        "Obtained_Marks",
+        "marks_obtained",
+        "Marks_Obtained",
+        "score_obtained",
+        "Score_Obtained",
+    ],
+    "total_marks": [
+        "total_marks",
+        "Total_Marks",
+        "max_marks",
+        "Max_Marks",
+        "full_marks",
+        "Full_Marks",
+        "out_of_marks",
+        "Out_Of_Marks",
+    ],
     "marks": [
         "marks",
         "mark",
-        "obtained_marks",
-        "Obtained_Marks",
-        "total_marks",
-        "Total_Marks",
         "score",
         "Score",
-        "marks_obtained",
     ],
     "result": ["result", "Result", "pass_fail", "Pass_Fail", "status", "Status", "grade_result", "Grade_Result"],
 }
@@ -229,6 +242,60 @@ def _normalize_term_display(v) -> str:
     return s
 
 
+def _sr_to_float_marks(v) -> float | None:
+    if v is None:
+        return None
+    if isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    s = str(v).strip().replace(",", "")
+    if not s:
+        return None
+    try:
+        return float(s)
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_obtained_total_from_combined_marks(raw) -> tuple[float | None, float | None]:
+    """If marks is a single field like '42/50' or '42 / 50', return (obtained, total)."""
+    if raw is None:
+        return None, None
+    s = str(raw).strip().replace(",", "")
+    if not s:
+        return None, None
+    if "/" in s:
+        parts = s.split("/", 1)
+        return _sr_to_float_marks(parts[0]), _sr_to_float_marks(parts[1])
+    return None, None
+
+
+def _pretty_mark_num(n: float) -> str:
+    if n == int(n):
+        return str(int(n))
+    return str(round(n, 2)).rstrip("0").rstrip(".")
+
+
+# Student results are exposed on a fixed 0–100 scale (total marks always 100).
+STUDENT_MARKS_TOTAL_FIXED = 100.0
+
+
+def _normalize_student_marks_to_scale(
+    obtained_raw: float | None, total_raw: float | None
+) -> tuple[float | None, float | None, float | None]:
+    """Map row marks to obtained / total=100 / percentage (percentage equals obtained on this scale)."""
+    if obtained_raw is None:
+        return None, None, None
+    if total_raw is not None and total_raw > 0:
+        on_hundred = round((obtained_raw / total_raw) * STUDENT_MARKS_TOTAL_FIXED, 1)
+    else:
+        on_hundred = round(obtained_raw, 1)
+    total_fixed = STUDENT_MARKS_TOTAL_FIXED
+    pct = round((on_hundred / total_fixed) * 100, 1)
+    return on_hundred, total_fixed, pct
+
+
 def _student_results_group_key(row: dict) -> tuple[str, str, str, str, str]:
     uid = _normalize_teacher_uid_for_join(_sr_get_from_row(row, "user_id"))
     sy = str(_sr_get_from_row(row, "session_year") or "").strip()
@@ -240,15 +307,48 @@ def _student_results_group_key(row: dict) -> tuple[str, str, str, str, str]:
 
 def _row_to_student_result_payload(row: dict) -> dict:
     name = _sr_get_from_row(row, "student_name")
-    marks = _sr_get_from_row(row, "marks")
+    marks_combined = _sr_get_from_row(row, "marks")
     result = _sr_get_from_row(row, "result")
+    obtained = _sr_to_float_marks(_sr_get_from_row(row, "obtained_marks"))
+    total = _sr_to_float_marks(_sr_get_from_row(row, "total_marks"))
+    if obtained is None and total is None and marks_combined is not None:
+        po, pt = _parse_obtained_total_from_combined_marks(marks_combined)
+        if po is not None:
+            obtained = po
+        if pt is not None:
+            total = pt
+        if obtained is None and total is None:
+            only = _sr_to_float_marks(marks_combined)
+            if only is not None:
+                obtained = only
+
+    obt_100, tot_fixed, marks_pct = _normalize_student_marks_to_scale(obtained, total)
+
+    marks_display = marks_combined
+    if obt_100 is not None:
+        marks_display = _pretty_mark_num(obt_100) + "/" + _pretty_mark_num(tot_fixed)
+
     out = {
         "student_name": str(name).strip() if name is not None else "",
-        "marks": _json_safe_value(marks),
+        "marks": _json_safe_value(marks_display if marks_display is not None else marks_combined),
+        "obtained_marks": obt_100,
+        "total_marks": tot_fixed,
+        "marks_percentage": marks_pct,
         "result": str(result).strip() if result is not None else "",
     }
     used_lower = set()
-    for c in ("user_id", "session_year", "term", "grade", "subject", "student_name", "marks", "result"):
+    for c in (
+        "user_id",
+        "session_year",
+        "term",
+        "grade",
+        "subject",
+        "student_name",
+        "marks",
+        "obtained_marks",
+        "total_marks",
+        "result",
+    ):
         for a in STUDENT_RESULTS_ALIASES.get(c, [c]):
             used_lower.add(str(a).lower())
     extras = {}

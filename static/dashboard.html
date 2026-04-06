@@ -755,6 +755,19 @@
         }
         return null;
       }
+      function studentResultObtainedCell(s) {
+        if (s.obtained_marks != null && s.obtained_marks !== '' && Number.isFinite(Number(s.obtained_marks))) return String(s.obtained_marks);
+        if (s.marks != null && s.marks !== '' && String(s.marks).trim() !== '') return String(s.marks);
+        return '—';
+      }
+      function studentResultTotalCell(s) {
+        if (s.total_marks != null && s.total_marks !== '' && Number.isFinite(Number(s.total_marks))) return String(s.total_marks);
+        return '—';
+      }
+      function studentResultPctCell(s) {
+        if (s.marks_percentage != null && s.marks_percentage !== '' && Number.isFinite(Number(s.marks_percentage))) return Number(s.marks_percentage).toFixed(1) + '%';
+        return '—';
+      }
       function openStudentResultsGroupModal(group) {
         var students = group.students || [];
         var titleParts = [group.session_year, group.term, group.grade ? 'Grade ' + group.grade : '', group.subject || ''].filter(function(x) { return x != null && String(x).trim() !== ''; });
@@ -774,7 +787,9 @@
         var theadCells = [
           el('th', {}, '#'),
           el('th', {}, 'Student'),
-          el('th', { className: 'col-score' }, 'Marks'),
+          el('th', { className: 'col-score' }, 'Obtained'),
+          el('th', { className: 'col-score' }, 'Total'),
+          el('th', { className: 'col-score' }, '%'),
           el('th', {}, 'Result')
         ];
         extraKeys.forEach(function(k) {
@@ -784,7 +799,9 @@
           var cells = [
             el('td', {}, String(i + 1)),
             el('td', {}, s.student_name || '—'),
-            el('td', { className: 'col-score' }, s.marks != null && s.marks !== '' ? String(s.marks) : '—'),
+            el('td', { className: 'col-score' }, studentResultObtainedCell(s)),
+            el('td', { className: 'col-score' }, studentResultTotalCell(s)),
+            el('td', { className: 'col-score' }, studentResultPctCell(s)),
             el('td', {}, s.result || '—')
           ];
           extraKeys.forEach(function(k) {
