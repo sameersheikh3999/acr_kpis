@@ -7,7 +7,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from pathlib import Path
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from google.cloud import bigquery
@@ -20,7 +20,66 @@ PORT = int(os.getenv("PORT", "8000"))
 # Override with env ACR_DATA_TABLE if needed.
 ACR_DATA_TABLE = os.getenv("ACR_DATA_TABLE", "tbproddb.fico_kpis").strip()
 
-app = FastAPI(title="ACR-KPIs Performance Dashboard API", version="1.0.0")
+# Student marks / results; joined to teachers via user_id (same as fico_kpis). Override with STUDENT_RESULTS_TABLE.
+STUDENT_RESULTS_TABLE = os.getenv("STUDENT_RESULTS_TABLE", "tbproddb.student_results_data").strip()
+
+# Column name variants for tbproddb.student_results_data (SELECT *).
+STUDENT_RESULTS_ALIASES = {
+    "user_id": [
+        "user_id",
+        "User_ID",
+        "userId",
+        "userid",
+        "teacher_id",
+        "Teacher_ID",
+        "teacher_user_id",
+        "Teacher_User_ID",
+        "fk_user_id",
+        "FK_User_ID",
+    ],
+    "session_year": [
+        "session_year",
+        "Session_Year",
+        "academic_year",
+        "Academic_Year",
+        "year",
+        "Year",
+        "session",
+        "Session",
+    ],
+    "term": ["term", "Term", "exam_term", "Exam_Term", "examination_term", "Examination_Term", "term_name", "Term_Name"],
+    "grade": ["grade", "Grade", "class", "Class", "class_grade", "Class_Grade"],
+    "subject": ["subject", "Subject", "subject_name", "Subject_Name", "course", "Course"],
+    "student_name": [
+        "student_name",
+        "Student_Name",
+        "student_full_name",
+        "Student_Full_Name",
+        "pupil_name",
+        "student_id",
+        "Student_ID",
+        "roll_no",
+        "Roll_No",
+        "roll_number",
+    ],
+    "marks": [
+        "marks",
+        "mark",
+        "obtained_marks",
+        "Obtained_Marks",
+        "total_marks",
+        "Total_Marks",
+        "score",
+        "Score",
+        "marks_obtained",
+    ],
+    "result": ["result", "Result", "pass_fail", "Pass_Fail", "status", "Status", "grade_result", "Grade_Result"],
+}
+
+# Resolved BigQuery field name for linking teachers (from INFORMATION_SCHEMA / get_table).
+_sr_uid_sql_column: str | None = None
+
+app = FastAPI(title="ACR-KPIs Performance Dashboard API", version="1.0.0", redirect_slashes=False)
 
 
 @app.on_event("startup")
@@ -32,6 +91,16 @@ def _log_credential_env():
     else:
         related = [k for k in os.environ if "GOOGLE" in k.upper() or "CREDENTIAL" in k.upper() or "KEYY" in k or "keyy" in k.lower()]
         print("[ACR API] Startup: no credential env. Names that might be relevant: %s" % (related or "(none)"))
+    sr_paths = sorted(
+        {
+            getattr(r, "path", "")
+            for r in app.routes
+            if hasattr(r, "path")
+            and ("student" in getattr(r, "path", "") or "teacher-student" in getattr(r, "path", ""))
+        }
+    )
+    if sr_paths:
+        print("[ACR API] Student-results routes registered: %s" % ", ".join(sr_paths))
 
 
 app.add_middleware(
@@ -108,6 +177,221 @@ def _get_from_row(row: dict, canonical_key: str):
         if v is not None:
             return v
     return row.get(canonical_key)
+
+
+def _sr_enrich_row_dict(d: dict) -> dict:
+    """Lowercase keys on a BigQuery row dict so student_results aliases resolve."""
+    out = dict(d)
+    for k, v in list(d.items()):
+        if isinstance(k, str):
+            out.setdefault(k.lower(), v)
+    return out
+
+
+def _sr_get_from_row(row: dict, canonical_key: str):
+    for alias in STUDENT_RESULTS_ALIASES.get(canonical_key, [canonical_key]):
+        v = row.get(alias)
+        if v is None and isinstance(alias, str):
+            v = row.get(alias.lower())
+        if v is not None and v != "":
+            return v
+    return row.get(canonical_key)
+
+
+def _normalize_teacher_uid_for_join(uid) -> str:
+    """Same rules as dashboard teacher cards for joining fico_kpis.user_id ↔ student_results.user_id."""
+    if uid is None or (isinstance(uid, str) and not str(uid).strip()):
+        return "__unknown__"
+    if isinstance(uid, (int, float)):
+        return str(int(uid))
+    s = str(uid).strip()
+    if not s:
+        return "__unknown__"
+    try:
+        return str(int(float(s)))
+    except (ValueError, TypeError):
+        return s
+
+
+def _normalize_term_display(v) -> str:
+    if v is None:
+        return ""
+    s = str(v).strip()
+    if not s:
+        return ""
+    sl = s.lower().replace("_", " ")
+    if sl in ("1", "first", "i", "term 1", "term1", "1st"):
+        return "First"
+    if sl in ("2", "second", "ii", "term 2", "term2", "2nd"):
+        return "Second"
+    if sl in ("3", "final", "third", "iii", "term 3", "term3", "3rd", "annual"):
+        return "Final"
+    return s
+
+
+def _student_results_group_key(row: dict) -> tuple[str, str, str, str, str]:
+    uid = _normalize_teacher_uid_for_join(_sr_get_from_row(row, "user_id"))
+    sy = str(_sr_get_from_row(row, "session_year") or "").strip()
+    term = _normalize_term_display(_sr_get_from_row(row, "term"))
+    grade = str(_sr_get_from_row(row, "grade") or "").strip()
+    subj = str(_sr_get_from_row(row, "subject") or "").strip()
+    return uid, sy, term, grade, subj
+
+
+def _row_to_student_result_payload(row: dict) -> dict:
+    name = _sr_get_from_row(row, "student_name")
+    marks = _sr_get_from_row(row, "marks")
+    result = _sr_get_from_row(row, "result")
+    out = {
+        "student_name": str(name).strip() if name is not None else "",
+        "marks": _json_safe_value(marks),
+        "result": str(result).strip() if result is not None else "",
+    }
+    used_lower = set()
+    for c in ("user_id", "session_year", "term", "grade", "subject", "student_name", "marks", "result"):
+        for a in STUDENT_RESULTS_ALIASES.get(c, [c]):
+            used_lower.add(str(a).lower())
+    extras = {}
+    for k, v in row.items():
+        if not isinstance(k, str):
+            continue
+        if k.lower() in used_lower:
+            continue
+        if v is None or (isinstance(v, str) and not str(v).strip()):
+            continue
+        extras[k] = _json_safe_value(v)
+    if extras:
+        out["extra"] = extras
+    return out
+
+
+def _term_sort_order(term: str) -> int:
+    return {"First": 0, "Second": 1, "Final": 2}.get(term, 50)
+
+
+def _aggregate_student_result_summaries(rows: list[dict]) -> dict[str, list[dict]]:
+    """user_id -> [{ session_year, term, grade, subject, student_count }]."""
+    counts: dict[tuple[str, str, str, str, str], int] = defaultdict(int)
+    for row in rows:
+        uid, sy, term, grade, subj = _student_results_group_key(row)
+        if uid == "__unknown__":
+            continue
+        counts[(uid, sy, term, grade, subj)] += 1
+    by_uid: dict[str, list[dict]] = defaultdict(list)
+    for (uid, sy, term, grade, subj), n in counts.items():
+        by_uid[uid].append({
+            "session_year": sy,
+            "term": term,
+            "grade": grade,
+            "subject": subj,
+            "student_count": n,
+        })
+    for uid, groups in by_uid.items():
+        groups.sort(key=lambda g: (g["session_year"], _term_sort_order(g["term"]), g["grade"], g["subject"]))
+    return dict(by_uid)
+
+
+def _groups_with_students_for_teacher(rows: list[dict]) -> list[dict]:
+    """Build grouped list with students for one teacher (rows already filtered by user_id)."""
+    buckets: dict[tuple[str, str, str, str], list[dict]] = defaultdict(list)
+    for row in rows:
+        _, sy, term, grade, subj = _student_results_group_key(row)
+        buckets[(sy, term, grade, subj)].append(row)
+    groups = []
+    for (sy, term, grade, subj), lst in buckets.items():
+        groups.append({
+            "session_year": sy,
+            "term": term,
+            "grade": grade,
+            "subject": subj,
+            "student_count": len(lst),
+            "students": [_row_to_student_result_payload(r) for r in lst],
+        })
+    groups.sort(key=lambda g: (g["session_year"], _term_sort_order(g["term"]), g["grade"], g["subject"]))
+    return groups
+
+
+def _full_student_groups_by_teacher_uid(rows: list[dict]) -> dict[str, list[dict]]:
+    """One copy of full session/term/grade/subject + students per teacher uid (same scan as summaries)."""
+    by_uid: dict[str, list[dict]] = defaultdict(list)
+    for row in rows:
+        uid = _normalize_teacher_uid_for_join(_sr_get_from_row(row, "user_id"))
+        if uid == "__unknown__":
+            continue
+        by_uid[uid].append(row)
+    return {uid: _groups_with_students_for_teacher(lst) for uid, lst in by_uid.items()}
+
+
+def _fetch_all_student_result_rows(client: bigquery.Client) -> list[dict]:
+    if not STUDENT_RESULTS_TABLE:
+        return []
+    query = f"SELECT * FROM `{STUDENT_RESULTS_TABLE}`"
+    return [_sr_enrich_row_dict(_bq_row_to_dict(r)) for r in client.query(query).result()]
+
+
+def _bq_backtick_ident(field_name: str) -> str:
+    return "`" + str(field_name).replace("`", "") + "`"
+
+
+def _resolve_student_results_uid_sql_column(client: bigquery.Client) -> str:
+    """Physical column name in student_results_data for the teacher key (matches fico_kpis.user_id)."""
+    global _sr_uid_sql_column
+    if _sr_uid_sql_column:
+        return _sr_uid_sql_column
+    if not STUDENT_RESULTS_TABLE:
+        _sr_uid_sql_column = "user_id"
+        return _sr_uid_sql_column
+    try:
+        table = client.get_table(STUDENT_RESULTS_TABLE)
+    except Exception as e:
+        print(f"[student_results] get_table({STUDENT_RESULTS_TABLE}) failed: {e}; using user_id")
+        _sr_uid_sql_column = "user_id"
+        return _sr_uid_sql_column
+    aliases_lower = {a.lower() for a in STUDENT_RESULTS_ALIASES["user_id"]}
+    for field in table.schema:
+        if field.name.lower() in aliases_lower:
+            _sr_uid_sql_column = field.name
+            print(f"[student_results] Teacher key column: {_sr_uid_sql_column}")
+            return _sr_uid_sql_column
+    for field in table.schema:
+        fl = field.name.lower()
+        if "user" in fl and "id" in fl:
+            _sr_uid_sql_column = field.name
+            print(f"[student_results] Teacher key column (heuristic): {_sr_uid_sql_column}")
+            return _sr_uid_sql_column
+    _sr_uid_sql_column = "user_id"
+    print("[student_results] Teacher key column (fallback): user_id")
+    return _sr_uid_sql_column
+
+
+def _fetch_student_result_rows_for_user(client: bigquery.Client, user_id: str) -> list[dict]:
+    if not STUDENT_RESULTS_TABLE:
+        return []
+    uid = str(user_id).strip()
+    col = _bq_backtick_ident(_resolve_student_results_uid_sql_column(client))
+    # Match string IDs and numeric IDs (e.g. INT user_id vs STRING teacher id from KPIs).
+    query = f"""
+SELECT * FROM `{STUDENT_RESULTS_TABLE}`
+WHERE CAST({col} AS STRING) = @uid
+   OR (
+        SAFE_CAST(@uid AS INT64) IS NOT NULL
+        AND SAFE_CAST(CAST({col} AS STRING) AS INT64) = SAFE_CAST(@uid AS INT64)
+   )
+"""
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[bigquery.ScalarQueryParameter("uid", "STRING", uid)]
+    )
+    try:
+        return [_sr_enrich_row_dict(_bq_row_to_dict(r)) for r in client.query(query, job_config=job_config).result()]
+    except Exception as e:
+        print(f"[student_results] Filtered query failed ({e}); falling back to in-memory filter for uid={uid!r}")
+        uid_norm = _normalize_teacher_uid_for_join(uid)
+        all_rows = _fetch_all_student_result_rows(client)
+        return [
+            r
+            for r in all_rows
+            if _normalize_teacher_uid_for_join(_sr_get_from_row(r, "user_id")) == uid_norm
+        ]
 
 
 def _normalize_row(row: dict) -> dict:
@@ -245,6 +529,7 @@ def _empty_dashboard_payload():
             "subject_by_sector": [],
         },
         "heads": [],
+        "student_results_by_user_id": {},
     }
 
 
@@ -569,6 +854,25 @@ def get_dashboard(response: Response):
         merged_unique_teachers.append(merge_teacher_observations(obs_list))
     merged_unique_teachers.sort(key=lambda t: (float(t.get("overall_percentage") or 0), str(t.get("teacher_name") or "")), reverse=True)
 
+    student_summaries: dict[str, list] = {}
+    student_results_by_user_id: dict[str, list] = {}
+    if STUDENT_RESULTS_TABLE:
+        try:
+            sr_rows = _fetch_all_student_result_rows(client)
+            student_summaries = _aggregate_student_result_summaries(sr_rows)
+            student_results_by_user_id = _full_student_groups_by_teacher_uid(sr_rows)
+        except Exception as e:
+            print(f"[Dashboard] student_results_data failed: {e}")
+
+    def _attach_student_results(tlist: list) -> None:
+        for t in tlist:
+            uid = _normalize_teacher_uid_for_join(_get_from_row(t, "user_id"))
+            t["student_results"] = [] if uid == "__unknown__" else student_summaries.get(uid, [])
+
+    for sec in sectors:
+        _attach_student_results(sec["teachers"])
+    _attach_student_results(merged_unique_teachers)
+
     payload = {
         "overall": {
             "total_teachers": unique_teachers,
@@ -584,6 +888,7 @@ def get_dashboard(response: Response):
         "all_observations": all_teachers,
         "reports": reports,
         "heads": _load_heads(),
+        "student_results_by_user_id": student_results_by_user_id,
     }
     return _json_safe_value(payload)
 
@@ -609,6 +914,69 @@ def get_teacher(user_id: str):
         return None
     teacher = row_to_teacher(_bq_row_to_dict(rows[0]))
     return _json_safe_value(teacher)
+
+
+def _serve_student_results(user_id: str, response: Response):
+    """Shared handler: teacher key = fico_kpis.user_id, same value as student_results_data.teacher_id (or user_id)."""
+    user_id = (user_id or "").strip().strip("/").strip()
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    if not STUDENT_RESULTS_TABLE:
+        response.status_code = 503
+        return {
+            "user_id": user_id,
+            "groups": [],
+            "error": "table_not_configured",
+            "message": "Set STUDENT_RESULTS_TABLE (default tbproddb.student_results_data).",
+        }
+    try:
+        client = get_bigquery_client()
+    except FileNotFoundError as e:
+        response.status_code = 503
+        return {"user_id": user_id, "groups": [], "error": "credentials_missing", "message": str(e)}
+    except ValueError as e:
+        response.status_code = 503
+        return {"user_id": user_id, "groups": [], "error": "credentials_invalid", "message": str(e)}
+    try:
+        rows = _fetch_student_result_rows_for_user(client, user_id)
+        groups = _groups_with_students_for_teacher(rows)
+    except Exception as e:
+        print(f"[ACR API] student-results/{user_id}: {e}")
+        response.status_code = 502
+        return {"user_id": user_id, "groups": [], "error": "query_failed", "message": str(e)}
+    return _json_safe_value({"user_id": user_id, "groups": groups})
+
+
+# Prefer this URL in the browser (works behind proxies and avoids path-routing 404s).
+@app.get("/api/student-results")
+def get_student_results_by_query(
+    response: Response,
+    user_id: str = Query(..., description="Teacher id (same as fico_kpis.user_id / student_results.teacher_id)"),
+):
+    return _serve_student_results(user_id, response)
+
+
+@app.get("/api/student-results/{user_id}")
+def get_student_results_by_teacher_path(user_id: str, response: Response):
+    """Same as GET /api/student-results?user_id=… (path style for bookmarks / curl)."""
+    return _serve_student_results(user_id, response)
+
+
+@app.get("/api/student-results/")
+def get_student_results_by_query_trailing_slash(
+    response: Response,
+    user_id: str = Query(..., description="Teacher id (same as fico_kpis.user_id / student_results.teacher_id)"),
+):
+    """Trailing-slash variant (some clients/proxies add `/` before `?`)."""
+    return _serve_student_results(user_id, response)
+
+
+@app.get("/api/dashboard/teacher-student-results")
+def get_dashboard_teacher_student_results(
+    response: Response,
+    user_id: str = Query(..., description="Teacher id (same as fico_kpis.user_id / student_results.teacher_id)"),
+):
+    """Same payload as /api/student-results — lives under /api/dashboard/ for environments where that prefix is already routed."""
+    return _serve_student_results(user_id, response)
 
 
 # Root: serve Performance Dashboard (static HTML)

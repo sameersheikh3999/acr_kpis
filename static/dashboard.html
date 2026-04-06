@@ -146,6 +146,13 @@
     .fico-kpi-coverage-ok { color: #15803d; font-weight: 600; }
     .fico-kpi-modal-foot { flex-shrink: 0; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); font-size: 0.8125rem; color: var(--muted); }
     .fico-kpi-modal-foot strong { color: var(--text); }
+    .student-results-panel { margin-top: 0.25rem; }
+    .student-results-summary-table tbody tr.student-results-summary-row { cursor: pointer; transition: background 0.15s; }
+    .student-results-summary-table tbody tr.student-results-summary-row:hover { background: rgba(69,123,157,0.12); }
+    .student-results-summary-table tbody tr.student-results-summary-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .student-results-summary-table tbody tr.student-results-summary-row--disabled { cursor: default; opacity: 0.88; }
+    .student-results-summary-table tbody tr.student-results-summary-row--disabled:hover { background: transparent; }
+    .student-results-hint { line-height: 1.45; }
     .top100-section { margin-bottom: 2rem; }
     .top100-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
     .top100-export-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(69,123,157,0.3); transition: transform 0.2s, box-shadow 0.2s; }
@@ -278,6 +285,20 @@
     .panel-close:hover { color: var(--text); background: var(--surface); }
     .panel-body { flex: 1; padding: 1.5rem; display: grid; grid-template-columns: 40% 1fr; gap: 1.5rem; align-items: start; overflow-y: auto; min-height: 0; }
     .panel-body.profile-collapsed { grid-template-columns: 52px 1fr; }
+    /* Keep observation + KPI + student results in the wide column (3rd grid child was landing in the narrow profile column). */
+    .panel-body > .panel-main-column {
+      grid-column: 2;
+      grid-row: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .panel-body > .panel-profile-wrap { grid-column: 1; grid-row: 1; }
+    @media (max-width: 768px) {
+      .panel-body > .panel-main-column { grid-column: 1; grid-row: auto; }
+      .panel-body > .panel-profile-wrap { grid-column: 1; grid-row: auto; }
+    }
     .panel-profile-wrap { position: relative; min-width: 0; }
     .panel-profile-wrap.profile-collapsed .panel-profile-content { display: none; }
     .panel-profile-wrap.profile-collapsed .panel-profile-tab { display: flex; }
@@ -710,7 +731,248 @@
         }
         return null;
       }
-      function renderTeacherDetailBody(teacher, allObservations, heads) {
+      function openStudentResultsGroupModal(group) {
+        var students = group.students || [];
+        var titleParts = [group.session_year, group.term, group.grade ? 'Grade ' + group.grade : '', group.subject || ''].filter(function(x) { return x != null && String(x).trim() !== ''; });
+        var title = titleParts.join(' · ') || 'Class';
+        function close() {
+          if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop);
+        }
+        var extraKeys = [];
+        students.forEach(function(s) {
+          if (s.extra && typeof s.extra === 'object') {
+            Object.keys(s.extra).forEach(function(k) {
+              if (extraKeys.indexOf(k) === -1) extraKeys.push(k);
+            });
+          }
+        });
+        extraKeys.sort();
+        var theadCells = [
+          el('th', {}, '#'),
+          el('th', {}, 'Student'),
+          el('th', { className: 'col-score' }, 'Marks'),
+          el('th', {}, 'Result')
+        ];
+        extraKeys.forEach(function(k) {
+          theadCells.push(el('th', {}, k));
+        });
+        var trs = students.map(function(s, i) {
+          var cells = [
+            el('td', {}, String(i + 1)),
+            el('td', {}, s.student_name || '—'),
+            el('td', { className: 'col-score' }, s.marks != null && s.marks !== '' ? String(s.marks) : '—'),
+            el('td', {}, s.result || '—')
+          ];
+          extraKeys.forEach(function(k) {
+            var ev = s.extra && s.extra[k] != null ? s.extra[k] : '';
+            cells.push(el('td', {}, String(ev)));
+          });
+          return el('tr', {}, cells);
+        });
+        var table = el('table', { className: 'fico-kpi-table' }, [
+          el('thead', {}, el('tr', {}, theadCells)),
+          el('tbody', {}, trs)
+        ]);
+        var backdrop = el('div', {
+          className: 'fico-kpi-modal-backdrop',
+          role: 'dialog',
+          'aria-modal': 'true',
+          onClick: function(e) { if (e.target === backdrop) close(); }
+        });
+        var modal = el('div', { className: 'fico-kpi-modal', onClick: function(e) { e.stopPropagation(); } }, [
+          el('div', { className: 'fico-kpi-modal-header' }, [
+            el('div', {}, [
+              el('h3', {}, 'Students — ' + title),
+              el('p', {}, String(students.length) + ' student record(s)')
+            ]),
+            el('button', { type: 'button', className: 'fico-kpi-modal-close', onClick: close }, 'Close')
+          ]),
+          el('div', { className: 'fico-kpi-modal-body' }, el('div', { className: 'fico-kpi-table-wrap' }, [table])),
+          el('div', { className: 'fico-kpi-modal-foot' }, el('p', { style: { margin: 0 } }, [
+            el('strong', {}, 'Source: '), ' student_results_data (joined by user_id)'
+          ]))
+        ]);
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+      }
+      function normalizeTeacherUidForApi(raw) {
+        if (raw == null || raw === '') return '';
+        if (typeof raw === 'number' && Number.isFinite(raw)) return String(Math.trunc(raw));
+        var s = String(raw).trim();
+        if (s === '') return '';
+        var n = Number(s);
+        if (Number.isFinite(n) && /^-?\d+(\.\d+)?$/.test(s)) return String(Math.trunc(n));
+        return s;
+      }
+      function lookupStudentGroupsInBundledMap(uid, uidRaw, uidMap) {
+        if (!uidMap || typeof uidMap !== 'object') return null;
+        var candidates = [];
+        if (uid) candidates.push(uid, String(uid));
+        if (uidRaw != null && uidRaw !== '') {
+          var t = String(uidRaw).trim();
+          if (t) candidates.push(t, normalizeTeacherUidForApi(uidRaw));
+        }
+        var seen = {};
+        for (var i = 0; i < candidates.length; i++) {
+          var k = candidates[i];
+          if (k == null || k === '' || seen[k]) continue;
+          seen[k] = true;
+          if (Object.prototype.hasOwnProperty.call(uidMap, k) && uidMap[k] != null) return uidMap[k];
+        }
+        var n = parseInt(uid, 10);
+        if (!isNaN(n)) {
+          var ks = String(n);
+          if (Object.prototype.hasOwnProperty.call(uidMap, ks) && uidMap[ks] != null) return uidMap[ks];
+        }
+        return null;
+      }
+      function renderSummaryTableFromGroups(groups) {
+        if (!groups || !groups.length) return null;
+        var thead = el('tr', {}, [
+          el('th', {}, 'Session year'),
+          el('th', {}, 'Term'),
+          el('th', {}, 'Grade'),
+          el('th', {}, 'Subject'),
+          el('th', { className: 'col-score' }, 'Students')
+        ]);
+        var rows = groups.map(function(g) {
+          var hasDetail = g.students && g.students.length > 0;
+          var attrs = {
+            className: 'student-results-summary-row' + (hasDetail ? '' : ' student-results-summary-row--disabled')
+          };
+          if (hasDetail) {
+            attrs.tabIndex = 0;
+            attrs.title = 'View student list';
+            attrs.onClick = function() { openStudentResultsGroupModal(g); };
+            attrs.onKeydown = function(e) {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openStudentResultsGroupModal(g);
+              }
+            };
+          } else {
+            attrs.title = 'Student marks not loaded (summary only)';
+          }
+          return el('tr', attrs, [
+            el('td', {}, g.session_year || '—'),
+            el('td', {}, g.term || '—'),
+            el('td', {}, g.grade || '—'),
+            el('td', {}, g.subject || '—'),
+            el('td', { className: 'col-score' }, String(g.student_count != null ? g.student_count : ((g.students && g.students.length) || 0)))
+          ]);
+        });
+        return el('div', { className: 'fico-kpi-table-wrap student-results-table-wrap' }, [
+          el('table', { className: 'fico-kpi-table student-results-summary-table' }, [
+            el('thead', {}, thead),
+            el('tbody', {}, rows)
+          ])
+        ]);
+      }
+      function renderStudentResultsSection(teacher, dashPayload) {
+        var uidRaw = teacher.user_id != null ? teacher.user_id : teacher.User_ID != null ? teacher.User_ID : '';
+        var uid = normalizeTeacherUidForApi(uidRaw);
+        var mount = el('div', { className: 'student-results-mount' });
+        var wrap = el('div', { className: 'panel-part student-results-panel' }, [
+          el('h3', { className: 'panel-part-title' }, 'Student results'),
+          el('p', {
+            className: 'panel-part-caption',
+            style: { fontSize: '0.75rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' }
+          }, 'Session year, term (First / Second / Final), grade, and subject. Click a row to see each student’s marks and result.'),
+          mount
+        ]);
+        if (!uid) {
+          mount.appendChild(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem', margin: 0 } }, 'No teacher user id — student results cannot be loaded.'));
+          return wrap;
+        }
+        var hasBundledMap = dashPayload != null && Object.prototype.hasOwnProperty.call(dashPayload, 'student_results_by_user_id');
+        var uidMap = hasBundledMap ? dashPayload.student_results_by_user_id : null;
+        var fromDash = lookupStudentGroupsInBundledMap(uid, uidRaw, uidMap);
+        if (hasBundledMap) {
+          if (fromDash && fromDash.length) {
+            mount.appendChild(el('p', { style: { fontSize: '0.72rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' } }, 'Data from /api/dashboard (click Refresh on the home page if this looks out of date).'));
+            var tblBundled = renderSummaryTableFromGroups(fromDash);
+            if (tblBundled) mount.appendChild(tblBundled);
+            mount.appendChild(el('p', { className: 'student-results-hint', style: { fontSize: '0.72rem', color: 'var(--muted)', margin: '0.5rem 0 0 0' } }, 'Tip: click a row (or press Enter when focused) to open marks and result for each student.'));
+            return wrap;
+          }
+          if (Array.isArray(fromDash) && fromDash.length === 0) {
+            mount.appendChild(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem', margin: 0 } }, 'No class groups in student_results_data for this teacher id.'));
+            return wrap;
+          }
+          if (teacher.student_results && teacher.student_results.length) {
+            mount.appendChild(el('p', { style: { fontSize: '0.72rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' } }, 'Full student marks are not in the bundle for this id; showing session/term summary only.'));
+            var summOnly = teacher.student_results.map(function(s) {
+              return { session_year: s.session_year, term: s.term, grade: s.grade, subject: s.subject, student_count: s.student_count, students: [] };
+            });
+            var tblSum = renderSummaryTableFromGroups(summOnly);
+            if (tblSum) mount.appendChild(tblSum);
+            return wrap;
+          }
+          mount.appendChild(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem', margin: 0 } }, 'No student_results_data rows for teacher id “' + uid + '”. Confirm fico_kpis.user_id matches student_results_data.teacher_id, then click Refresh.'));
+          return wrap;
+        }
+        mount.appendChild(el('p', { className: 'student-results-loading', style: { color: 'var(--muted)', fontSize: '0.875rem', margin: 0 } }, 'Loading from API…'));
+        function formatStudentResultsFetchError(status, data) {
+          if (data && data.message) return String(data.message);
+          if (data && data.detail != null) {
+            var d = data.detail;
+            if (typeof d === 'string') return d;
+            try { return JSON.stringify(d); } catch (e) { return String(d); }
+          }
+          if (data && data.error) return String(data.error);
+          if (status) return 'Request failed (HTTP ' + status + ').';
+          return 'Could not load student results.';
+        }
+        function parseStudentResultsResponse(r) {
+          return r.json().then(function(data) { return { ok: r.ok, status: r.status, data: data }; }).catch(function() {
+            return { ok: false, status: r.status, data: { error: 'bad_json', message: 'Invalid JSON from server.' } };
+          });
+        }
+        function studentResultsPayloadLooksValid(res) {
+          var data = res.data;
+          return !!(res.ok && data && Object.prototype.hasOwnProperty.call(data, 'groups') && Array.isArray(data.groups));
+        }
+        function applyStudentResultsPayload(res) {
+          mount.innerHTML = '';
+          var data = res.data;
+          if (!studentResultsPayloadLooksValid(res)) {
+            mount.appendChild(el('p', { style: { color: 'var(--rose)', fontSize: '0.875rem', margin: 0 } }, formatStudentResultsFetchError(res.status, data)));
+            mount.appendChild(el('p', { style: { fontSize: '0.8125rem', color: 'var(--muted)', margin: '0.5rem 0 0 0' } }, 'If this persists, restart the API (uvicorn) so routes /api/student-results and /api/dashboard include student data, then hard-refresh the page.'));
+            return;
+          }
+          var groups = data.groups || [];
+          if (!groups.length) {
+            mount.appendChild(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem', margin: 0 } }, 'No student result rows for this teacher in student_results_data (check user_id / teacher_id matches).'));
+            return;
+          }
+          var tblOk = renderSummaryTableFromGroups(groups);
+          if (tblOk) mount.appendChild(tblOk);
+          mount.appendChild(el('p', { className: 'student-results-hint', style: { fontSize: '0.72rem', color: 'var(--muted)', margin: '0.5rem 0 0 0' } }, 'Tip: click any row (or press Enter when focused) to open marks and result for each student.'));
+        }
+        var fetchOpts = { cache: 'no-store', headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } };
+        var urlPrimary = API + '/student-results?user_id=' + encodeURIComponent(uid);
+        var urlFallback = API + '/dashboard/teacher-student-results?user_id=' + encodeURIComponent(uid);
+        fetch(urlPrimary, fetchOpts)
+          .then(function(r) { return parseStudentResultsResponse(r); })
+          .then(function(res) {
+            if (studentResultsPayloadLooksValid(res)) {
+              applyStudentResultsPayload(res);
+              return;
+            }
+            if (res.status === 404) {
+              return fetch(urlFallback, fetchOpts).then(function(r2) { return parseStudentResultsResponse(r2); }).then(function(res2) {
+                applyStudentResultsPayload(res2);
+              });
+            }
+            applyStudentResultsPayload(res);
+          })
+          .catch(function() {
+            mount.innerHTML = '';
+            mount.appendChild(el('p', { style: { color: 'var(--rose)', fontSize: '0.875rem', margin: 0 } }, 'Network error loading student results.'));
+          });
+        return wrap;
+      }
+      function renderTeacherDetailBody(teacher, allObservations, heads, dashPayload) {
         var headsList = heads && Array.isArray(heads) ? heads : [];
         var headInfo = getHeadByEmis(teacher.EMIS || teacher.emis || teacher.School_EMIS || teacher.school_emis, headsList);
         var headName = headInfo ? (headInfo.head_names || headInfo.head_name || '—') : '—';
@@ -791,31 +1053,34 @@
         profileWrap.appendChild(profileContent);
         var bodyEl = el('div', { className: 'panel-body' }, [
           profileWrap,
-          el('div', { className: 'panel-part' }, [
-            el('h3', { className: 'panel-part-title' }, 'Observation Score Trend'),
-            el('p', { className: 'panel-part-caption', style: { fontSize: '0.75rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' } }, 'Date-wise by Observation_date'),
-            el('div', { className: 'panel-part-content' }, trendChart ? [trendChart] : [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data (Observation_date).')]),
-            el('div', { className: 'panel-part-title-row', style: { marginTop: '1.5rem' } }, [
-              el('h3', { className: 'panel-part-title' }, 'ACR-KPIs Breakdown'),
-              breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
+          el('div', { className: 'panel-main-column' }, [
+            el('div', { className: 'panel-part' }, [
+              el('h3', { className: 'panel-part-title' }, 'Observation Score Trend'),
+              el('p', { className: 'panel-part-caption', style: { fontSize: '0.75rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' } }, 'Date-wise by Observation_date'),
+              el('div', { className: 'panel-part-content' }, trendChart ? [trendChart] : [el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data (Observation_date).')]),
+              el('div', { className: 'panel-part-title-row', style: { marginTop: '1.5rem' } }, [
+                el('h3', { className: 'panel-part-title' }, 'ACR-KPIs Breakdown'),
+                breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
+              ].filter(Boolean)),
+              el('div', { className: 'panel-part-content' }, [
+                renderKpiSectionBars(kpisForBreakdown)
+              ].filter(Boolean))
             ].filter(Boolean)),
-            el('div', { className: 'panel-part-content' }, [
-              renderKpiSectionBars(kpisForBreakdown)
-            ].filter(Boolean))
-          ].filter(Boolean))
+            renderStudentResultsSection(teacher, dashPayload)
+          ])
         ]);
         profileWrap.classList.add('profile-collapsed');
         bodyEl.classList.add('profile-collapsed');
         return bodyEl;
       }
-      function renderPanel(teacher, onClose, allObservations) {
+      function renderPanel(teacher, onClose, allObservations, dashPayload) {
         const backdrop = el('div', { className: 'panel-backdrop', onClick: onClose });
         const panel = el('aside', { className: 'panel' }, [
           el('div', { className: 'panel-header' }, [
             el('h2', { style: { margin: 0, fontFamily: 'Outfit' } }, 'Teacher Report Card'),
             el('button', { type: 'button', className: 'panel-close', onClick: onClose, 'aria-label': 'Close' }, '✕')
           ]),
-          renderTeacherDetailBody(teacher, allObservations, dashboardData && dashboardData.heads ? dashboardData.heads : [])
+          renderTeacherDetailBody(teacher, allObservations, dashPayload && dashPayload.heads ? dashPayload.heads : [], dashPayload)
         ]);
         panel.addEventListener('click', e => e.stopPropagation());
         return el('div', {}, [backdrop, panel]);
@@ -1811,7 +2076,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
               ])
             ])
           ]);
-          const bodyContent = renderTeacherDetailBody(teacher, allObs, dashboardData && dashboardData.heads ? dashboardData.heads : []);
+          const bodyContent = renderTeacherDetailBody(teacher, allObs, dashboardData && dashboardData.heads ? dashboardData.heads : [], getActiveOverviewData());
           bodyContent.classList.add('teacher-detail-page-body');
           const main = el('main', { className: 'container teacher-detail-page', style: { paddingTop: '1rem', paddingBottom: '2rem' } }, [bodyContent]);
           setView(el('div', {}, [header, main]));
