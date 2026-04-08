@@ -309,13 +309,53 @@ def _normalize_term_display(v) -> str:
     s = str(v).strip()
     if not s:
         return ""
-    sl = s.lower().replace("_", " ")
-    if sl in ("1", "first", "i", "term 1", "term1", "1st"):
-        return "First"
-    if sl in ("2", "second", "ii", "term 2", "term2", "2nd"):
-        return "Second"
-    if sl in ("3", "final", "third", "iii", "term 3", "term3", "3rd", "annual"):
-        return "Final"
+    sl = " ".join(s.lower().replace("_", " ").split())
+    if sl in (
+        "1",
+        "first",
+        "i",
+        "term 1",
+        "term1",
+        "1st",
+        "first assessment",
+        "1st assessment",
+    ) or sl.startswith("first assessment"):
+        return "First Assessment"
+    if sl in (
+        "2",
+        "second",
+        "ii",
+        "term 2",
+        "term2",
+        "2nd",
+        "second assessment",
+        "2nd assessment",
+    ) or sl.startswith("second assessment"):
+        return "Second Assessment"
+    if sl in (
+        "3",
+        "third",
+        "iii",
+        "term 3",
+        "term3",
+        "3rd",
+        "third assessment",
+        "3rd assessment",
+    ) or sl.startswith("third assessment"):
+        return "Third Assessment"
+    if sl in (
+        "4",
+        "final",
+        "iv",
+        "annual",
+        "term 4",
+        "term4",
+        "4th",
+        "fourth",
+        "final assessment",
+        "4th assessment",
+    ) or sl.startswith("final assessment"):
+        return "Final Assessment"
     return s
 
 
@@ -449,7 +489,17 @@ def _row_to_student_result_payload(row: dict) -> dict:
 
 
 def _term_sort_order(term: str) -> int:
-    return {"First": 0, "Second": 1, "Final": 2}.get(term, 50)
+    t = str(term or "").strip().lower()
+    return {
+        "first assessment": 0,
+        "second assessment": 1,
+        "third assessment": 2,
+        "final assessment": 3,
+        "first": 0,
+        "second": 1,
+        "third": 2,
+        "final": 3,
+    }.get(t, 50)
 
 
 def _aggregate_student_result_summaries(rows: list[dict]) -> dict[str, list[dict]]:

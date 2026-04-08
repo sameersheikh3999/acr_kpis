@@ -932,11 +932,28 @@
         return String(s == null ? '' : s).trim().toLowerCase();
       }
       function termOrderRank(term) {
-        var t = String(term || '').trim().toLowerCase();
+        var t = String(term || '').trim().toLowerCase().replace(/_/g, ' ');
         if (t.indexOf('first') !== -1) return 0;
         if (t.indexOf('second') !== -1) return 1;
-        if (t.indexOf('final') !== -1) return 2;
+        if (t.indexOf('third') !== -1) return 2;
+        if (t.indexOf('final') !== -1) return 3;
         return 50;
+      }
+      function normalizeTermLabel(term) {
+        var s = String(term == null ? '' : term).trim();
+        if (!s) return '';
+        return s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
+      }
+      function sortGroupsBySessionAndTerm(groups) {
+        return (groups || []).slice().sort(function(a, b) {
+          var sy = String(a.session_year || '').localeCompare(String(b.session_year || ''));
+          if (sy !== 0) return sy;
+          var tr = termOrderRank(a.term) - termOrderRank(b.term);
+          if (tr !== 0) return tr;
+          var gcmp = String(a.grade || '').localeCompare(String(b.grade || ''), undefined, { numeric: true });
+          if (gcmp !== 0) return gcmp;
+          return String(a.subject || '').localeCompare(String(b.subject || ''));
+        });
       }
       function getTeacherClassGroups(teacher, dashPayload) {
         var uidRaw = teacher.user_id != null ? teacher.user_id : teacher.User_ID != null ? teacher.User_ID : '';
@@ -993,18 +1010,14 @@
       }
       function renderClassGpaTermChart(groupsForTrend, gradeLabel, subjectLabel) {
         if (!groupsForTrend || !groupsForTrend.length) return null;
-        var sorted = groupsForTrend.slice().sort(function(a, b) {
-          var sy = String(a.session_year || '').localeCompare(String(b.session_year || ''));
-          if (sy !== 0) return sy;
-          return termOrderRank(a.term) - termOrderRank(b.term);
-        });
+        var sorted = sortGroupsBySessionAndTerm(groupsForTrend);
         var svgNS = 'http://www.w3.org/2000/svg';
         var width = 560;
         var height = 260;
         var padding = { top: 28, right: 16, bottom: 56, left: 40 };
         var innerW = width - padding.left - padding.right;
         var innerH = height - padding.top - padding.bottom;
-        var maxGpa = 6;
+        var maxGpa = 4;
         var n = sorted.length;
         var barW = Math.min(36, Math.max(14, (innerW / Math.max(n, 1)) * 0.55));
         var xStep = n > 0 ? innerW / n : innerW;
@@ -1022,8 +1035,8 @@
         axisLine.setAttribute('stroke', 'var(--border)');
         axisLine.setAttribute('stroke-width', '1');
         svg.appendChild(axisLine);
-        for (var gi = 0; gi <= 3; gi++) {
-          var val = (maxGpa / 3) * gi;
+        for (var gi = 0; gi <= 4; gi++) {
+          var val = (maxGpa / 4) * gi;
           var y = padding.top + innerH - (val / maxGpa) * innerH;
           var grid = document.createElementNS(svgNS, 'line');
           grid.setAttribute('x1', padding.left);
@@ -1063,7 +1076,8 @@
             if (g.students && g.students.length) openStudentResultsGroupModal(g);
           });
           var titleEl = document.createElementNS(svgNS, 'title');
-          titleEl.textContent = (g.term || '—') + ': GPA ' + (g.class_gpa != null ? Number(g.class_gpa).toFixed(2) : '—') + (g.students && g.students.length ? ' — click for students' : '');
+          var termDisp = normalizeTermLabel(g.term) || '—';
+          titleEl.textContent = termDisp + ': GPA ' + (g.class_gpa != null ? Number(g.class_gpa).toFixed(2) : '—') + (g.students && g.students.length ? ' — click for students' : '');
           rect.appendChild(titleEl);
           svg.appendChild(rect);
           var pctLab = document.createElementNS(svgNS, 'text');
@@ -1081,7 +1095,7 @@
           termLab.setAttribute('font-size', '10');
           termLab.setAttribute('text-anchor', 'middle');
           termLab.setAttribute('fill', 'var(--muted)');
-          termLab.textContent = String(g.term || '—').length > 14 ? String(g.term).slice(0, 12) + '…' : String(g.term || '—');
+          termLab.textContent = termDisp.length > 22 ? termDisp.slice(0, 20) + '…' : termDisp;
           svg.appendChild(termLab);
           var syLab = document.createElementNS(svgNS, 'text');
           syLab.setAttribute('x', xCenter);
@@ -1095,12 +1109,13 @@
         var wrap = el('div', { className: 'class-gpa-trend-chart-card' }, [
           el('div', { className: 'class-gpa-trend-chart-title' }, 'Term-wise class GPA trend' + (gradeLabel || subjectLabel ? ' · ' + gradeLabel + ' · ' + subjectLabel : '')),
           svg,
-          el('p', { className: 'class-gpa-trend-chart-note' }, 'Y-axis 0–6 (letter-grade weight scale). Click a bar to open the student list for that session, term, grade, and subject.')
+          el('p', { className: 'class-gpa-trend-chart-note' }, 'Y-axis 0–4 (letter-grade weight scale). Click a bar to open the student list for that session, term, grade, and subject.')
         ]);
         return wrap;
       }
       function renderSummaryTableFromGroups(groups, teacherUid) {
         if (!groups || !groups.length) return null;
+        var sortedGroups = sortGroupsBySessionAndTerm(groups);
         var thead = el('tr', {}, [
           el('th', {}, 'Session year'),
           el('th', {}, 'Term'),
@@ -1109,7 +1124,7 @@
           el('th', { className: 'col-score' }, 'Students'),
           el('th', { className: 'col-score' }, 'Class GPA')
         ]);
-        var rows = groups.map(function(g) {
+        var rows = sortedGroups.map(function(g) {
           if (teacherUid && !g.teacher_user_id) g.teacher_user_id = teacherUid;
           var hasDetail = g.students && g.students.length > 0;
           var attrs = {
@@ -1137,7 +1152,7 @@
           }
           return el('tr', attrs, [
             el('td', {}, g.session_year || '—'),
-            el('td', {}, g.term || '—'),
+            el('td', {}, normalizeTermLabel(g.term) || '—'),
             el('td', {}, g.grade || '—'),
             el('td', {}, g.subject || '—'),
             el('td', { className: 'col-score' }, String(g.student_count != null ? g.student_count : ((g.students && g.students.length) || 0))),
@@ -2544,11 +2559,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             var filteredTable = filterGroupsByGradeSubject(groups, classGpaGrade, classGpaSubject);
             var tableRows = filteredTable.length ? filteredTable : groups;
             var trendCandidates = (classGpaGrade && classGpaSubject)
-              ? filterGroupsByGradeSubject(groups, classGpaGrade, classGpaSubject).slice().sort(function(a, b) {
-                var sy = String(a.session_year || '').localeCompare(String(b.session_year || ''));
-                if (sy !== 0) return sy;
-                return termOrderRank(a.term) - termOrderRank(b.term);
-              })
+              ? sortGroupsBySessionAndTerm(filterGroupsByGradeSubject(groups, classGpaGrade, classGpaSubject))
               : [];
             var backBtn = el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back');
             var header = el('header', { className: 'header' }, [
@@ -2583,7 +2594,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             ]);
             var hero = el('div', { className: 'class-gpa-trend-hero' }, [
               el('h2', {}, 'Assigned classes results'),
-              el('p', {}, 'Use the filters to narrow the table. When both a grade and a subject are selected, the chart shows class GPA by term (scale 0–6). Click a bar or a table row to open student marks.')
+              el('p', {}, 'Use the filters to narrow the table. When both a grade and a subject are selected, the chart shows class GPA by term (scale 0–4). Click a bar or a table row to open student marks.')
             ]);
             var chartEl = (classGpaGrade && classGpaSubject && trendCandidates.length)
               ? renderClassGpaTermChart(trendCandidates, 'Grade ' + classGpaGrade, classGpaSubject)
