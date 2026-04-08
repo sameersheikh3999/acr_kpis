@@ -56,11 +56,18 @@ STUDENT_RESULTS_ALIASES = {
         "student_full_name",
         "Student_Full_Name",
         "pupil_name",
+    ],
+    "student_id": [
         "student_id",
         "Student_ID",
         "roll_no",
         "Roll_No",
         "roll_number",
+        "Roll_Number",
+        "student_code",
+        "Student_Code",
+        "admission_no",
+        "Admission_No",
     ],
     "obtained_marks": [
         "obtained_marks",
@@ -87,10 +94,21 @@ STUDENT_RESULTS_ALIASES = {
         "Score",
     ],
     "result": ["result", "Result", "pass_fail", "Pass_Fail", "status", "Status", "grade_result", "Grade_Result"],
+    "student_grades": [
+        "student_grades",
+        "Student_Grades",
+        "student_grade",
+        "Student_Grade",
+        "letter_grade",
+        "Letter_Grade",
+        "grade_letter",
+        "Grade_Letter",
+    ],
 }
 
 # Resolved BigQuery field name for linking teachers (from INFORMATION_SCHEMA / get_table).
 _sr_uid_sql_column: str | None = None
+_sr_student_id_sql_column: str | None = None
 
 app = FastAPI(title="ACR-KPIs Performance Dashboard API", version="1.0.0", redirect_slashes=False)
 
@@ -211,6 +229,65 @@ def _sr_get_from_row(row: dict, canonical_key: str):
     return row.get(canonical_key)
 
 
+CLASS_GPA_WEIGHTS: dict[str, int] = {"A1": 6, "A": 5, "B": 4, "C": 3, "D": 2, "E": 1, "F": 0}
+
+
+def _letter_grade_key_from_raw(raw) -> str | None:
+    """Map a cell value to A1, A, B, C, D, E, or F for class GPA (A1 before A)."""
+    if raw is None:
+        return None
+    s = "".join(str(raw).strip().upper().split())
+    if not s:
+        return None
+    if s.startswith("A1"):
+        return "A1"
+    if s.startswith("A"):
+        return "A"
+    head = s[0]
+    if head in CLASS_GPA_WEIGHTS and head != "A":
+        return head
+    return None
+
+
+def _class_gpa_weight_from_student_row(row: dict) -> int | None:
+    raw = _sr_get_from_row(row, "student_grades")
+    key = _letter_grade_key_from_raw(raw)
+    if key is None:
+        return None
+    return CLASS_GPA_WEIGHTS.get(key)
+
+
+def _compute_class_gpa_for_rows(rows: list[dict]) -> tuple[float | None, int]:
+    """Class GPA = sum(weights) / count(students with a mapped letter grade). Returns (gpa, that count)."""
+    total_w = 0.0
+    n = 0
+    for r in rows:
+        w = _class_gpa_weight_from_student_row(r)
+        if w is not None:
+            total_w += float(w)
+            n += 1
+    if n == 0:
+        return None, 0
+    return round(total_w / n, 2), n
+
+
+def _normalize_student_id(v) -> str:
+    if v is None:
+        return ""
+    s = str(v).strip()
+    if not s:
+        return ""
+    try:
+        return str(int(float(s)))
+    except (TypeError, ValueError):
+        return s
+
+
+def _student_id_from_row(row: dict) -> str:
+    sid = _sr_get_from_row(row, "student_id")
+    return _normalize_student_id(sid)
+
+
 def _normalize_teacher_uid_for_join(uid) -> str:
     """Same rules as dashboard teacher cards for joining fico_kpis.user_id ↔ student_results.user_id."""
     if uid is None or (isinstance(uid, str) and not str(uid).strip()):
@@ -307,6 +384,7 @@ def _student_results_group_key(row: dict) -> tuple[str, str, str, str, str]:
 
 def _row_to_student_result_payload(row: dict) -> dict:
     name = _sr_get_from_row(row, "student_name")
+    student_id = _student_id_from_row(row)
     marks_combined = _sr_get_from_row(row, "marks")
     result = _sr_get_from_row(row, "result")
     obtained = _sr_to_float_marks(_sr_get_from_row(row, "obtained_marks"))
@@ -328,13 +406,16 @@ def _row_to_student_result_payload(row: dict) -> dict:
     if obt_100 is not None:
         marks_display = _pretty_mark_num(obt_100) + "/" + _pretty_mark_num(tot_fixed)
 
+    letter_grade = _sr_get_from_row(row, "student_grades")
     out = {
+        "student_id": student_id,
         "student_name": str(name).strip() if name is not None else "",
         "marks": _json_safe_value(marks_display if marks_display is not None else marks_combined),
         "obtained_marks": obt_100,
         "total_marks": tot_fixed,
         "marks_percentage": marks_pct,
         "result": str(result).strip() if result is not None else "",
+        "student_grade": str(letter_grade).strip() if letter_grade is not None else "",
     }
     used_lower = set()
     for c in (
@@ -343,11 +424,13 @@ def _row_to_student_result_payload(row: dict) -> dict:
         "term",
         "grade",
         "subject",
+        "student_id",
         "student_name",
         "marks",
         "obtained_marks",
         "total_marks",
         "result",
+        "student_grades",
     ):
         for a in STUDENT_RESULTS_ALIASES.get(c, [c]):
             used_lower.add(str(a).lower())
@@ -370,21 +453,24 @@ def _term_sort_order(term: str) -> int:
 
 
 def _aggregate_student_result_summaries(rows: list[dict]) -> dict[str, list[dict]]:
-    """user_id -> [{ session_year, term, grade, subject, student_count }]."""
-    counts: dict[tuple[str, str, str, str, str], int] = defaultdict(int)
+    """user_id -> [{ session_year, term, grade, subject, student_count, class_gpa, ... }]."""
+    buckets: dict[tuple[str, str, str, str, str], list[dict]] = defaultdict(list)
     for row in rows:
         uid, sy, term, grade, subj = _student_results_group_key(row)
         if uid == "__unknown__":
             continue
-        counts[(uid, sy, term, grade, subj)] += 1
+        buckets[(uid, sy, term, grade, subj)].append(row)
     by_uid: dict[str, list[dict]] = defaultdict(list)
-    for (uid, sy, term, grade, subj), n in counts.items():
+    for (uid, sy, term, grade, subj), lst in buckets.items():
+        gpa, gpa_n = _compute_class_gpa_for_rows(lst)
         by_uid[uid].append({
             "session_year": sy,
             "term": term,
             "grade": grade,
             "subject": subj,
-            "student_count": n,
+            "student_count": len(lst),
+            "class_gpa": gpa,
+            "class_gpa_students_count": gpa_n,
         })
     for uid, groups in by_uid.items():
         groups.sort(key=lambda g: (g["session_year"], _term_sort_order(g["term"]), g["grade"], g["subject"]))
@@ -399,12 +485,15 @@ def _groups_with_students_for_teacher(rows: list[dict]) -> list[dict]:
         buckets[(sy, term, grade, subj)].append(row)
     groups = []
     for (sy, term, grade, subj), lst in buckets.items():
+        gpa, gpa_n = _compute_class_gpa_for_rows(lst)
         groups.append({
             "session_year": sy,
             "term": term,
             "grade": grade,
             "subject": subj,
             "student_count": len(lst),
+            "class_gpa": gpa,
+            "class_gpa_students_count": gpa_n,
             "students": [_row_to_student_result_payload(r) for r in lst],
         })
     groups.sort(key=lambda g: (g["session_year"], _term_sort_order(g["term"]), g["grade"], g["subject"]))
@@ -462,6 +551,57 @@ def _resolve_student_results_uid_sql_column(client: bigquery.Client) -> str:
     _sr_uid_sql_column = "user_id"
     print("[student_results] Teacher key column (fallback): user_id")
     return _sr_uid_sql_column
+
+
+def _resolve_student_results_student_id_sql_column(client: bigquery.Client) -> str:
+    """Physical student identifier column in student_results_data."""
+    global _sr_student_id_sql_column
+    if _sr_student_id_sql_column:
+        return _sr_student_id_sql_column
+    if not STUDENT_RESULTS_TABLE:
+        _sr_student_id_sql_column = "student_id"
+        return _sr_student_id_sql_column
+    try:
+        table = client.get_table(STUDENT_RESULTS_TABLE)
+    except Exception:
+        _sr_student_id_sql_column = "student_id"
+        return _sr_student_id_sql_column
+    aliases_lower = {a.lower() for a in STUDENT_RESULTS_ALIASES["student_id"]}
+    for field in table.schema:
+        if field.name.lower() in aliases_lower:
+            _sr_student_id_sql_column = field.name
+            return _sr_student_id_sql_column
+    for field in table.schema:
+        fl = field.name.lower()
+        if "student" in fl and "id" in fl:
+            _sr_student_id_sql_column = field.name
+            return _sr_student_id_sql_column
+    _sr_student_id_sql_column = "student_id"
+    return _sr_student_id_sql_column
+
+
+def _fetch_student_result_rows_for_student_id(client: bigquery.Client, student_id: str) -> list[dict]:
+    if not STUDENT_RESULTS_TABLE:
+        return []
+    sid = str(student_id).strip()
+    col = _bq_backtick_ident(_resolve_student_results_student_id_sql_column(client))
+    query = f"""
+SELECT * FROM `{STUDENT_RESULTS_TABLE}`
+WHERE CAST({col} AS STRING) = @sid
+   OR (
+        SAFE_CAST(@sid AS INT64) IS NOT NULL
+        AND SAFE_CAST(CAST({col} AS STRING) AS INT64) = SAFE_CAST(@sid AS INT64)
+   )
+"""
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[bigquery.ScalarQueryParameter("sid", "STRING", sid)]
+    )
+    try:
+        return [_sr_enrich_row_dict(_bq_row_to_dict(r)) for r in client.query(query, job_config=job_config).result()]
+    except Exception:
+        sid_norm = _normalize_student_id(sid)
+        all_rows = _fetch_all_student_result_rows(client)
+        return [r for r in all_rows if _student_id_from_row(r) == sid_norm]
 
 
 def _fetch_student_result_rows_for_user(client: bigquery.Client, user_id: str) -> list[dict]:
@@ -1046,6 +1186,81 @@ def _serve_student_results(user_id: str, response: Response):
     return _json_safe_value({"user_id": user_id, "groups": groups})
 
 
+def _teacher_name_by_uid(client: bigquery.Client) -> dict[str, str]:
+    out: dict[str, str] = {}
+    if not ACR_DATA_TABLE:
+        return out
+    try:
+        rows = client.query(f"SELECT user_id, teacher_name FROM `{ACR_DATA_TABLE}` WHERE user_id IS NOT NULL").result()
+    except Exception:
+        return out
+    for r in rows:
+        d = _bq_row_to_dict(r)
+        uid = _normalize_teacher_uid_for_join(d.get("user_id"))
+        if uid == "__unknown__" or uid in out:
+            continue
+        nm = d.get("teacher_name")
+        if nm is not None and str(nm).strip():
+            out[uid] = str(nm).strip()
+    return out
+
+
+def _serve_student_history(student_id: str, teacher_user_id: str | None, response: Response):
+    student_id = _normalize_student_id(student_id)
+    teacher_user_id = _normalize_teacher_uid_for_join(teacher_user_id) if teacher_user_id else ""
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    if not student_id:
+        response.status_code = 400
+        return {"student_id": "", "records": [], "error": "student_id_required", "message": "Provide a valid student_id."}
+    try:
+        client = get_bigquery_client()
+    except FileNotFoundError as e:
+        response.status_code = 503
+        return {"student_id": student_id, "records": [], "error": "credentials_missing", "message": str(e)}
+    except ValueError as e:
+        response.status_code = 503
+        return {"student_id": student_id, "records": [], "error": "credentials_invalid", "message": str(e)}
+    try:
+        rows = _fetch_student_result_rows_for_student_id(client, student_id)
+    except Exception as e:
+        response.status_code = 502
+        return {"student_id": student_id, "records": [], "error": "query_failed", "message": str(e)}
+
+    tname_by_uid = _teacher_name_by_uid(client)
+    records = []
+    for row in rows:
+        sid = _student_id_from_row(row)
+        if sid != student_id:
+            continue
+        uid = _normalize_teacher_uid_for_join(_sr_get_from_row(row, "user_id"))
+        if teacher_user_id and teacher_user_id != "__unknown__" and uid != teacher_user_id:
+            continue
+        uid_out = "" if uid == "__unknown__" else uid
+        payload = _row_to_student_result_payload(row)
+        records.append({
+            "student_id": student_id,
+            "student_name": payload.get("student_name", ""),
+            "student_grade": payload.get("student_grade", ""),
+            "teacher_user_id": uid_out,
+            "teacher_name": tname_by_uid.get(uid_out, ""),
+            "session_year": str(_sr_get_from_row(row, "session_year") or "").strip(),
+            "term": _normalize_term_display(_sr_get_from_row(row, "term")),
+            "grade": str(_sr_get_from_row(row, "grade") or "").strip(),
+            "subject": str(_sr_get_from_row(row, "subject") or "").strip(),
+            "obtained_marks": payload.get("obtained_marks"),
+            "total_marks": payload.get("total_marks"),
+            "marks_percentage": payload.get("marks_percentage"),
+            "result": payload.get("result", ""),
+        })
+
+    records.sort(key=lambda r: (r["session_year"], _term_sort_order(r["term"]), r["grade"], r["subject"], r["teacher_user_id"]))
+    return _json_safe_value({
+        "student_id": student_id,
+        "teacher_user_id": "" if teacher_user_id in ("", "__unknown__") else teacher_user_id,
+        "records": records,
+    })
+
+
 # Prefer this URL in the browser (works behind proxies and avoids path-routing 404s).
 @app.get("/api/student-results")
 def get_student_results_by_query(
@@ -1077,6 +1292,20 @@ def get_dashboard_teacher_student_results(
 ):
     """Same payload as /api/student-results — lives under /api/dashboard/ for environments where that prefix is already routed."""
     return _serve_student_results(user_id, response)
+
+
+@app.get("/api/student-history")
+def get_student_history_by_query(
+    response: Response,
+    student_id: str = Query(..., description="Student identifier from student_results_data.student_id"),
+    teacher_user_id: str | None = Query(None, description="Optional teacher user_id filter"),
+):
+    return _serve_student_history(student_id, teacher_user_id, response)
+
+
+@app.get("/api/student-history/{student_id}")
+def get_student_history_by_path(student_id: str, response: Response, teacher_user_id: str | None = None):
+    return _serve_student_history(student_id, teacher_user_id, response)
 
 
 # Root: serve Performance Dashboard (static HTML)
