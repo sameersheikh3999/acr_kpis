@@ -2,9 +2,11 @@
 
 import base64
 import json
+import math
 import os
 from collections import defaultdict
 from datetime import date, datetime
+from decimal import Decimal
 from pathlib import Path
 
 from fastapi import FastAPI, Query, Response
@@ -72,26 +74,53 @@ STUDENT_RESULTS_ALIASES = {
     "obtained_marks": [
         "obtained_marks",
         "Obtained_Marks",
+        "obtainedMarks",
+        "ObtainedMarks",
         "marks_obtained",
         "Marks_Obtained",
         "score_obtained",
         "Score_Obtained",
+        "obtained",
+        "Obtained",
+        "student_marks",
+        "Student_Marks",
+        "subject_marks",
+        "Subject_Marks",
+        "exam_marks",
+        "Exam_Marks",
+        "written_marks",
+        "Written_Marks",
+        # Generic "marks" last: some tables use it for remarks/non-numeric; prefer specific columns above.
+        "marks",
+        "Marks",
     ],
     "total_marks": [
         "total_marks",
         "Total_Marks",
+        "totalMarks",
+        "TotalMarks",
         "max_marks",
         "Max_Marks",
         "full_marks",
         "Full_Marks",
         "out_of_marks",
         "Out_Of_Marks",
+        "total",
+        "Total",
+        "max_score",
+        "Max_Score",
+        "maximum_marks",
+        "Maximum_Marks",
+        "full_marks_total",
+        "Full_Marks_Total",
     ],
     "marks": [
         "marks",
         "mark",
         "score",
         "Score",
+        "combined_marks",
+        "Combined_Marks",
     ],
     "result": ["result", "Result", "pass_fail", "Pass_Fail", "status", "Status", "grade_result", "Grade_Result"],
     "student_grades": [
@@ -103,6 +132,23 @@ STUDENT_RESULTS_ALIASES = {
         "Letter_Grade",
         "grade_letter",
         "Grade_Letter",
+    ],
+    # Raw % from table (0–100); used when obtained/total are missing or to override computed %.
+    "percentage": [
+        "percentage",
+        "Percentage",
+        "percent",
+        "Percent",
+        "pct",
+        "Pct",
+        "marks_percent",
+        "Marks_Percent",
+        "marks_percentage",
+        "Marks_Percentage",
+        "score_percentage",
+        "Score_Percentage",
+        "marksPercentage",
+        "MarksPercentage",
     ],
 }
 
@@ -188,6 +234,8 @@ def _json_safe_value(v):
     """Make a value JSON-serializable for the frontend."""
     if v is None:
         return v
+    if isinstance(v, Decimal):
+        return float(v)
     if isinstance(v, (date, datetime)):
         return v.strftime("%Y-%m-%d") if hasattr(v, "strftime") else str(v)
     if isinstance(v, (int, float)):
@@ -215,18 +263,58 @@ def _sr_enrich_row_dict(d: dict) -> dict:
     out = dict(d)
     for k, v in list(d.items()):
         if isinstance(k, str):
-            out.setdefault(k.lower(), v)
+            lk = k.lower().strip()
+            if lk:
+                out.setdefault(lk, v)
     return out
+
+
+def _sr_value_present(v) -> bool:
+    """True if v is usable (not null/blank/NaN)."""
+    if v is None:
+        return False
+    if isinstance(v, str) and not str(v).strip():
+        return False
+    if isinstance(v, float) and math.isnan(v):
+        return False
+    return True
+
+
+def _sr_logical_key_norm(name: str) -> str:
+    """Compare column names ignoring case, underscores vs spaces (e.g. total_marks vs total marks)."""
+    return "".join(str(name).lower().split()).replace("_", "")
+
+
+def _sr_row_get_ci(row: dict, logical_name: str):
+    """First usable value for a column: exact case-insensitive match, then normalized key match."""
+    want_exact = logical_name.lower().strip()
+    want_norm = _sr_logical_key_norm(logical_name)
+    if not want_norm:
+        return None
+    for k, v in row.items():
+        if not isinstance(k, str):
+            continue
+        if k.lower().strip() == want_exact and _sr_value_present(v):
+            return v
+    for k, v in row.items():
+        if not isinstance(k, str):
+            continue
+        if _sr_logical_key_norm(k) == want_norm and _sr_value_present(v):
+            return v
+    return None
 
 
 def _sr_get_from_row(row: dict, canonical_key: str):
     for alias in STUDENT_RESULTS_ALIASES.get(canonical_key, [canonical_key]):
         v = row.get(alias)
         if v is None and isinstance(alias, str):
-            v = row.get(alias.lower())
-        if v is not None and v != "":
+            v = row.get(alias.lower().strip())
+        if _sr_value_present(v):
             return v
-    return row.get(canonical_key)
+    v = row.get(canonical_key)
+    if _sr_value_present(v):
+        return v
+    return None
 
 
 CLASS_GPA_WEIGHTS: dict[str, int] = {"A1": 6, "A": 5, "B": 4, "C": 3, "D": 2, "E": 1, "F": 0}
@@ -364,15 +452,125 @@ def _sr_to_float_marks(v) -> float | None:
         return None
     if isinstance(v, bool):
         return None
-    if isinstance(v, (int, float)):
+    if isinstance(v, Decimal):
         return float(v)
+    if isinstance(v, (int, float)):
+        x = float(v)
+        if math.isnan(x):
+            return None
+        return x
     s = str(v).strip().replace(",", "")
     if not s:
         return None
     try:
-        return float(s)
+        x = float(s)
+        if math.isnan(x):
+            return None
+        return x
     except (TypeError, ValueError):
         return None
+
+
+def _bq_struct_to_dict(v) -> dict | None:
+    """If v is a BigQuery STRUCT/Row or plain dict, return a string-keyed dict; else None."""
+    if v is None:
+        return None
+    if isinstance(v, dict):
+        return v
+    if isinstance(v, (str, bytes, int, float, bool, Decimal)):
+        return None
+    if hasattr(v, "keys") and hasattr(v, "__getitem__"):
+        try:
+            ks = list(v.keys())
+            if not ks:
+                return None
+            return {str(k): v[k] for k in ks}
+        except (TypeError, KeyError, ValueError):
+            return None
+    return None
+
+
+def _sr_coerce_obtained_total_pct_from_cell(v) -> tuple[float | None, float | None, float | None]:
+    """
+    Parse one table cell: plain number/string, '42/50', or STRUCT with common field names.
+    Returns (obtained, total, percentage).
+    """
+    if v is None:
+        return None, None, None
+    d = _bq_struct_to_dict(v)
+    if d is not None:
+        o = _sr_to_float_marks(
+            d.get("obtained_marks")
+            or d.get("marks_obtained")
+            or d.get("obtained")
+            or d.get("marks")
+            or d.get("mark")
+            or d.get("score")
+        )
+        t = _sr_to_float_marks(
+            d.get("total_marks")
+            or d.get("total_mark")
+            or d.get("total")
+            or d.get("max_marks")
+            or d.get("out_of")
+            or d.get("full_marks")
+        )
+        p = _sr_parse_percentage_cell(d.get("percentage") or d.get("percent") or d.get("pct"))
+        return o, t, p
+    if isinstance(v, (list, tuple)) and len(v) == 1:
+        return _sr_coerce_obtained_total_pct_from_cell(v[0])
+    if isinstance(v, str) and "/" in v:
+        po, pt = _parse_obtained_total_from_combined_marks(v)
+        return po, pt, None
+    x = _sr_to_float_marks(v)
+    return x, None, None
+
+
+def _sr_parse_percentage_cell(v) -> float | None:
+    """Parse percentage column: 72, 72.5, '72%', '72.5 %'."""
+    if not _sr_value_present(v):
+        return None
+    if isinstance(v, (int, float, Decimal)):
+        x = float(v)
+        if isinstance(v, float) and math.isnan(x):
+            return None
+        return x
+    s = str(v).strip().replace(",", "")
+    if s.endswith("%"):
+        s = s[:-1].strip()
+    return _sr_to_float_marks(s)
+
+
+def _sr_standard_marks_from_row(row: dict) -> tuple[float | None, float | None, float | None]:
+    """
+    Read tbproddb.student_results_data-style columns marks, total_marks, percentage
+    with case-insensitive keys (direct names, not only alias lists).
+    Supports BigQuery STRUCT/ROW cells and singular column names (mark, total_mark).
+    """
+    m = _sr_row_get_ci(row, "marks") or _sr_row_get_ci(row, "mark")
+    tm = _sr_row_get_ci(row, "total_marks") or _sr_row_get_ci(row, "total_mark")
+    pc = _sr_row_get_ci(row, "percentage") or _sr_row_get_ci(row, "percent")
+    obtained: float | None = None
+    total: float | None = None
+    pct: float | None = None
+    if m is not None:
+        mo, mt, mp = _sr_coerce_obtained_total_pct_from_cell(m)
+        obtained = mo
+        total = mt
+        pct = mp
+    if tm is not None:
+        _, tt, tp = _sr_coerce_obtained_total_pct_from_cell(tm)
+        if tt is not None:
+            total = tt
+        if tp is not None and pct is None:
+            pct = tp
+    if pc is not None:
+        _, _, pp = _sr_coerce_obtained_total_pct_from_cell(pc)
+        if pp is not None:
+            pct = pp
+        elif pct is None:
+            pct = _sr_parse_percentage_cell(pc)
+    return obtained, total, pct
 
 
 def _parse_obtained_total_from_combined_marks(raw) -> tuple[float | None, float | None]:
@@ -413,6 +611,85 @@ def _normalize_student_marks_to_scale(
     return on_hundred, total_fixed, pct
 
 
+def _sr_supplement_marks_from_row(
+    row: dict,
+    obtained: float | None,
+    total: float | None,
+    raw_pct: float | None,
+) -> tuple[float | None, float | None, float | None]:
+    """Scan row for mark-like columns when canonical aliases miss (BQ naming drift)."""
+    obts: list[tuple[int, int, float]] = []
+    tots: list[tuple[int, int, float]] = []
+    pcts: list[tuple[int, int, float]] = []
+    for k, v in row.items():
+        if not isinstance(k, str):
+            continue
+        if v is None:
+            continue
+        if isinstance(v, str) and not str(v).strip():
+            continue
+        lk = k.lower().strip().replace(" ", "_").replace("-", "_")
+        if "remark" in lk:
+            continue
+        sval = str(v).strip()
+        if "/" in sval:
+            po, pt = _parse_obtained_total_from_combined_marks(v)
+            if po is not None:
+                obts.append((55, -len(k), po))
+            if pt is not None:
+                tots.append((55, -len(k), pt))
+            continue
+        fv = _sr_to_float_marks(v)
+        if fv is None:
+            co, ct, cp = _sr_coerce_obtained_total_pct_from_cell(v)
+            if co is not None:
+                obts.append((60, -len(k), co))
+            if ct is not None:
+                tots.append((60, -len(k), ct))
+            if cp is not None:
+                pcts.append((86, -len(k), cp))
+            continue
+        if "percent" in lk or lk in ("pct", "perc"):
+            pcts.append((85, -len(k), fv))
+        elif (("total" in lk or "max" in lk or "full" in lk) and ("mark" in lk or "score" in lk)) or lk in (
+            "totalmarks",
+            "totalmark",
+            "maxmarks",
+            "fullmarks",
+            "out_of",
+        ):
+            tots.append((75, -len(k), fv))
+        elif lk in (
+            "marks",
+            "mark",
+            "obtained",
+            "points",
+            "raw_marks",
+            "student_marks",
+            "subject_marks",
+            "exam_marks",
+            "written_marks",
+            "marks_obtained",
+            "obtained_marks",
+            "obtainedmarks",
+            "mark_obtained",
+        ) or ("obtain" in lk and "mark" in lk):
+            obts.append((70, -len(k), fv))
+        elif lk.endswith("_marks") and "total" not in lk and "percent" not in lk:
+            obts.append((45, -len(k), fv))
+
+    def _pick(xs: list[tuple[int, int, float]]) -> float | None:
+        if not xs:
+            return None
+        xs.sort(key=lambda z: (-z[0], z[1]))
+        return xs[0][2]
+
+    o = obtained if obtained is not None else _pick(obts)
+    t = total if total is not None else _pick(tots)
+    p = raw_pct if raw_pct is not None else _pick(pcts)
+    return o, t, p
+
+
 def _student_results_group_key(row: dict) -> tuple[str, str, str, str, str]:
     uid = _normalize_teacher_uid_for_join(_sr_get_from_row(row, "user_id"))
     sy = str(_sr_get_from_row(row, "session_year") or "").strip()
@@ -425,22 +702,71 @@ def _student_results_group_key(row: dict) -> tuple[str, str, str, str, str]:
 def _row_to_student_result_payload(row: dict) -> dict:
     name = _sr_get_from_row(row, "student_name")
     student_id = _student_id_from_row(row)
+    std_obt, std_tot, std_pct = _sr_standard_marks_from_row(row)
     marks_combined = _sr_get_from_row(row, "marks")
+    if marks_combined is None and std_obt is not None:
+        marks_combined = _sr_row_get_ci(row, "marks")
     result = _sr_get_from_row(row, "result")
-    obtained = _sr_to_float_marks(_sr_get_from_row(row, "obtained_marks"))
-    total = _sr_to_float_marks(_sr_get_from_row(row, "total_marks"))
+    om_raw = _sr_get_from_row(row, "obtained_marks")
+    tm_raw = _sr_get_from_row(row, "total_marks")
+    obtained = _sr_to_float_marks(om_raw)
+    total = _sr_to_float_marks(tm_raw)
+    if om_raw is not None:
+        co, ct, _ = _sr_coerce_obtained_total_pct_from_cell(om_raw)
+        if obtained is None and co is not None:
+            obtained = co
+        if total is None and ct is not None:
+            total = ct
+    if tm_raw is not None:
+        co2, ct2, _ = _sr_coerce_obtained_total_pct_from_cell(tm_raw)
+        if obtained is None and co2 is not None:
+            obtained = co2
+        if total is None and ct2 is not None:
+            total = ct2
+    if obtained is None and std_obt is not None:
+        obtained = std_obt
+    if total is None and std_tot is not None:
+        total = std_tot
     if obtained is None and total is None and marks_combined is not None:
-        po, pt = _parse_obtained_total_from_combined_marks(marks_combined)
+        po, pt, _pmc = _sr_coerce_obtained_total_pct_from_cell(marks_combined)
         if po is not None:
             obtained = po
         if pt is not None:
             total = pt
         if obtained is None and total is None:
+            po2, pt2 = _parse_obtained_total_from_combined_marks(marks_combined)
+            if po2 is not None:
+                obtained = po2
+            if pt2 is not None:
+                total = pt2
+        if obtained is None and total is None:
             only = _sr_to_float_marks(marks_combined)
             if only is not None:
                 obtained = only
 
+    pc_raw = _sr_get_from_row(row, "percentage")
+    raw_pct = _sr_parse_percentage_cell(pc_raw)
+    if raw_pct is None and pc_raw is not None:
+        _, _, rp = _sr_coerce_obtained_total_pct_from_cell(pc_raw)
+        if rp is not None:
+            raw_pct = rp
+    if raw_pct is None and std_pct is not None:
+        raw_pct = std_pct
+    obtained, total, raw_pct = _sr_supplement_marks_from_row(row, obtained, total, raw_pct)
+
     obt_100, tot_fixed, marks_pct = _normalize_student_marks_to_scale(obtained, total)
+    if raw_pct is not None:
+        raw_pct = min(100.0, max(0.0, raw_pct))
+    if obt_100 is None and tot_fixed is None and marks_pct is None and raw_pct is not None:
+        marks_pct = round(raw_pct, 1)
+        obt_100 = round((raw_pct / 100.0) * STUDENT_MARKS_TOTAL_FIXED, 1)
+        tot_fixed = STUDENT_MARKS_TOTAL_FIXED
+    elif marks_pct is None and raw_pct is not None:
+        marks_pct = round(raw_pct, 1)
+        if obt_100 is None:
+            obt_100 = round((raw_pct / 100.0) * STUDENT_MARKS_TOTAL_FIXED, 1)
+        if tot_fixed is None:
+            tot_fixed = STUDENT_MARKS_TOTAL_FIXED
 
     marks_display = marks_combined
     if obt_100 is not None:
@@ -469,6 +795,7 @@ def _row_to_student_result_payload(row: dict) -> dict:
         "marks",
         "obtained_marks",
         "total_marks",
+        "percentage",
         "result",
         "student_grades",
     ):
@@ -1287,7 +1614,7 @@ def _serve_student_history(student_id: str, teacher_user_id: str | None, respons
             continue
         uid_out = "" if uid == "__unknown__" else uid
         payload = _row_to_student_result_payload(row)
-        records.append({
+        rec = {
             "student_id": student_id,
             "student_name": payload.get("student_name", ""),
             "student_grade": payload.get("student_grade", ""),
@@ -1300,8 +1627,13 @@ def _serve_student_history(student_id: str, teacher_user_id: str | None, respons
             "obtained_marks": payload.get("obtained_marks"),
             "total_marks": payload.get("total_marks"),
             "marks_percentage": payload.get("marks_percentage"),
+            "marks_display": payload.get("marks"),
             "result": payload.get("result", ""),
-        })
+        }
+        ex = payload.get("extra")
+        if isinstance(ex, dict) and ex:
+            rec["extra"] = ex
+        records.append(rec)
 
     records.sort(key=lambda r: (r["session_year"], _term_sort_order(r["term"]), r["grade"], r["subject"], r["teacher_user_id"]))
     return _json_safe_value({

@@ -154,6 +154,8 @@
     .student-results-summary-table tbody tr.student-results-summary-row--disabled { cursor: default; opacity: 0.88; }
     .student-results-summary-table tbody tr.student-results-summary-row--disabled:hover { background: transparent; }
     .student-results-hint { line-height: 1.45; }
+    .student-subject-charts { margin-bottom: 1.25rem; }
+    .student-subject-charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; align-items: start; }
     .class-gpa-trend-entry-btn {
       display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 0.5rem;
       padding: 0.85rem 1.65rem; border-radius: 999px; font-size: 1rem; font-weight: 700;
@@ -205,6 +207,33 @@
     .class-gpa-trend-chart-note { font-size: 0.75rem; color: var(--muted); margin: 0.5rem 0 0 0; line-height: 1.4; }
     .class-gpa-trend-bar { cursor: pointer; transition: opacity 0.15s; }
     .class-gpa-trend-bar:hover { opacity: 0.88; }
+    .class-final-spotlight-hint {
+      margin: -0.35rem 0 0.65rem 0; font-size: 0.8125rem; color: #0f766e; font-weight: 600; line-height: 1.45;
+    }
+    .student-results-summary-table tfoot.student-results-final-spotlight-foot {
+      box-shadow: 0 -6px 28px rgba(13, 148, 136, 0.18);
+    }
+    .student-results-summary-table tfoot.student-results-final-spotlight-foot tr {
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.14), rgba(29, 53, 87, 0.1));
+      border-top: 3px solid #0d9488;
+    }
+    .student-results-summary-table tfoot.student-results-final-spotlight-foot td {
+      padding-top: 0.95rem; padding-bottom: 0.95rem; vertical-align: middle;
+      border-color: rgba(13, 148, 136, 0.35);
+    }
+    .student-results-final-spotlight-row { outline-offset: 2px; }
+    .student-results-final-spotlight-row:not(.student-results-summary-row--disabled) { cursor: pointer; }
+    .student-results-final-spotlight-row:not(.student-results-summary-row--disabled):hover { background: linear-gradient(135deg, rgba(13, 148, 136, 0.2), rgba(29, 53, 87, 0.12)) !important; }
+    .final-spotlight-ribbon {
+      display: inline-block; font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em;
+      color: #fff; background: linear-gradient(135deg, #0d9488, #0f766e); padding: 0.2rem 0.5rem; border-radius: 6px; margin-bottom: 0.35rem;
+    }
+    .final-spotlight-session { font-size: 0.8125rem; font-weight: 700; color: var(--text); font-family: Outfit, sans-serif; }
+    .final-spotlight-gpa {
+      display: inline-block; font-family: Outfit, sans-serif; font-size: 1.45rem; font-weight: 800; line-height: 1.1;
+      color: var(--text); letter-spacing: -0.02em; font-feature-settings: 'tnum';
+    }
+    .final-spotlight-gpa-sub { display: block; font-size: 0.68rem; font-weight: 600; color: var(--muted); margin-top: 0.2rem; font-family: inherit; }
     .top100-section { margin-bottom: 2rem; }
     .top100-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
     .top100-export-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(69,123,157,0.3); transition: transform 0.2s, box-shadow 0.2s; }
@@ -899,6 +928,212 @@
           _acrNav.goAssessmentResults(group);
         }
       }
+      function studentHistoryExtraNumeric(extra, preferredKeys) {
+        if (!extra || typeof extra !== 'object') return null;
+        for (var i = 0; i < preferredKeys.length; i++) {
+          var k = preferredKeys[i];
+          if (!Object.prototype.hasOwnProperty.call(extra, k)) continue;
+          var v = extra[k];
+          if (v == null || (typeof v === 'string' && !String(v).trim())) continue;
+          var n = Number(v);
+          if (Number.isFinite(n)) return n;
+        }
+        return null;
+      }
+      function studentHistoryParseMarksDisplayObtainTotal(display) {
+        var s = display == null ? '' : String(display).trim();
+        if (!s || s.indexOf('/') === -1) return { obt: null, tot: null };
+        var parts = s.split('/');
+        var a = Number(parts[0].trim());
+        var b = parts.length > 1 ? Number(parts[1].trim()) : NaN;
+        return {
+          obt: Number.isFinite(a) ? a : null,
+          tot: Number.isFinite(b) ? b : null
+        };
+      }
+      function studentHistoryObtainedCell(r) {
+        if (r.obtained_marks != null && Number.isFinite(Number(r.obtained_marks))) return String(r.obtained_marks);
+        var parsed = studentHistoryParseMarksDisplayObtainTotal(r.marks_display);
+        if (parsed.obt != null) return String(parsed.obt);
+        var n = studentHistoryExtraNumeric(r.extra, ['obtained_marks', 'Obtained_Marks', 'marks', 'Marks', 'obtainedMarks', 'student_marks', 'Subject_Marks', 'Exam_Marks', 'written_marks']);
+        return n != null ? String(n) : '—';
+      }
+      function studentHistoryTotalCell(r) {
+        if (r.total_marks != null && Number.isFinite(Number(r.total_marks))) return String(r.total_marks);
+        var parsed = studentHistoryParseMarksDisplayObtainTotal(r.marks_display);
+        if (parsed.tot != null) return String(parsed.tot);
+        var n = studentHistoryExtraNumeric(r.extra, ['total_marks', 'Total_Marks', 'totalMarks', 'max_marks', 'Max_Marks', 'full_marks', 'maximum_marks']);
+        return n != null ? String(n) : '—';
+      }
+      function studentHistoryPctCellFromRecord(r) {
+        if (r.marks_percentage != null && Number.isFinite(Number(r.marks_percentage))) return Number(r.marks_percentage).toFixed(1) + '%';
+        var p = studentHistoryExtraNumeric(r.extra, ['percentage', 'Percentage', 'marks_percentage', 'Marks_Percentage', 'marksPercentage', 'percent', 'Percent', 'pct']);
+        if (p != null) return Number(p).toFixed(1) + '%';
+        var pct = studentHistoryPct(r);
+        return pct != null ? Number(pct).toFixed(1) + '%' : '—';
+      }
+      function studentHistoryPct(rec) {
+        if (!rec) return null;
+        if (rec.marks_percentage != null && Number.isFinite(Number(rec.marks_percentage))) return Number(rec.marks_percentage);
+        var exPct = studentHistoryExtraNumeric(rec.extra, ['percentage', 'Percentage', 'marks_percentage', 'Marks_Percentage', 'marksPercentage', 'percent', 'Percent', 'pct']);
+        if (exPct != null) return exPct;
+        var o = rec.obtained_marks;
+        var t = rec.total_marks;
+        if ((o == null || t == null) && rec.extra) {
+          if (o == null) o = studentHistoryExtraNumeric(rec.extra, ['obtained_marks', 'Obtained_Marks', 'marks', 'Marks', 'obtainedMarks']);
+          if (t == null) t = studentHistoryExtraNumeric(rec.extra, ['total_marks', 'Total_Marks', 'totalMarks', 'max_marks']);
+        }
+        if (o != null && t != null && Number(t) > 0 && Number.isFinite(Number(o)) && Number.isFinite(Number(t))) {
+          return (Number(o) / Number(t)) * 100;
+        }
+        var parsed = studentHistoryParseMarksDisplayObtainTotal(rec.marks_display);
+        if (parsed.obt != null && parsed.tot != null && parsed.tot > 0) {
+          return (parsed.obt / parsed.tot) * 100;
+        }
+        return null;
+      }
+      function latestStudentSessionYear(recs) {
+        var years = {};
+        (recs || []).forEach(function(r) {
+          var sy = String(r.session_year || '').trim();
+          if (sy) years[sy] = true;
+        });
+        return Object.keys(years).sort(function(a, b) {
+          return String(b).localeCompare(String(a), undefined, { numeric: true });
+        })[0] || '';
+      }
+      function buildStudentSubjectPctSeries(recs, sessionYear, coreKey) {
+        var pool = (recs || []).filter(function(r) {
+          return String(r.session_year || '').trim() === sessionYear && coreSubjectKey(r.subject) === coreKey;
+        });
+        var byTerm = {};
+        pool.forEach(function(r) {
+          var k = String(r.term || '').trim();
+          if (!k) return;
+          var pct = studentHistoryPct(r);
+          var rank = termOrderRank(r.term);
+          var prev = byTerm[k];
+          if (!prev || (pct != null && (prev.pct == null || pct > prev.pct))) {
+            byTerm[k] = { term: r.term, pct: pct, rank: rank };
+          }
+        });
+        var list = Object.keys(byTerm).map(function(k) { return byTerm[k]; });
+        list.sort(function(a, b) { return a.rank - b.rank; });
+        return list.map(function(x) {
+          return { termLabel: normalizeTermLabel(x.term), pct: x.pct };
+        });
+      }
+      function renderStudentSubjectPctChart(series, title, sessionYear, barColor) {
+        barColor = barColor || '#0d9488';
+        var n = series && series.length ? series.length : 0;
+        if (!n) {
+          return el('div', { className: 'class-gpa-trend-chart-card' }, [
+            el('div', { className: 'class-gpa-trend-chart-title' }, title),
+            el('p', { className: 'class-gpa-trend-chart-note', style: { margin: 0 } }, 'No assessments for this subject in ' + sessionYear + '.')
+          ]);
+        }
+        var maxPct = 100;
+        var svgNS = 'http://www.w3.org/2000/svg';
+        var width = 520;
+        var height = 220;
+        var padding = { top: 24, right: 12, bottom: 44, left: 36 };
+        var innerW = width - padding.left - padding.right;
+        var innerH = height - padding.top - padding.bottom;
+        var barW = Math.min(40, Math.max(14, (innerW / Math.max(n, 1)) * 0.5));
+        var xStep = n > 0 ? innerW / n : innerW;
+        var svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('width', '100%');
+        svg.setAttribute('height', height);
+        svg.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        svg.setAttribute('aria-label', title);
+        var axisY = padding.top + innerH;
+        var axisLine = document.createElementNS(svgNS, 'line');
+        axisLine.setAttribute('x1', padding.left);
+        axisLine.setAttribute('y1', axisY);
+        axisLine.setAttribute('x2', padding.left + innerW);
+        axisLine.setAttribute('y2', axisY);
+        axisLine.setAttribute('stroke', 'var(--border)');
+        axisLine.setAttribute('stroke-width', '1');
+        svg.appendChild(axisLine);
+        for (var gi = 0; gi <= 4; gi++) {
+          var val = (maxPct / 4) * gi;
+          var y = padding.top + innerH - (val / maxPct) * innerH;
+          var grid = document.createElementNS(svgNS, 'line');
+          grid.setAttribute('x1', padding.left);
+          grid.setAttribute('y1', y);
+          grid.setAttribute('x2', padding.left + innerW);
+          grid.setAttribute('y2', y);
+          grid.setAttribute('stroke', 'rgba(0,0,0,0.06)');
+          grid.setAttribute('stroke-dasharray', '4 4');
+          svg.appendChild(grid);
+          var lbl = document.createElementNS(svgNS, 'text');
+          lbl.setAttribute('x', padding.left - 6);
+          lbl.setAttribute('y', y + 4);
+          lbl.setAttribute('font-size', '8');
+          lbl.setAttribute('text-anchor', 'end');
+          lbl.setAttribute('fill', 'var(--muted)');
+          lbl.textContent = val === 0 ? '0' : String(Math.round(val));
+          svg.appendChild(lbl);
+        }
+        series.forEach(function(pt, i) {
+          var pct = pt.pct != null && Number.isFinite(Number(pt.pct)) ? Number(pt.pct) : null;
+          var hFrac = pct != null ? Math.min(1, Math.max(0, pct / maxPct)) : 0;
+          var barH = pct != null ? hFrac * innerH : 0;
+          var xCenter = padding.left + (i + 0.5) * xStep;
+          var barX = xCenter - barW / 2;
+          var barY = padding.top + innerH - barH;
+          var rect = document.createElementNS(svgNS, 'rect');
+          rect.setAttribute('x', barX);
+          rect.setAttribute('y', pct != null ? barY : axisY - 2);
+          rect.setAttribute('width', barW);
+          rect.setAttribute('height', pct != null ? Math.max(barH, 2) : 2);
+          rect.setAttribute('rx', 4);
+          rect.setAttribute('fill', barColor);
+          rect.setAttribute('opacity', pct != null ? '0.9' : '0.2');
+          svg.appendChild(rect);
+          var valLab = document.createElementNS(svgNS, 'text');
+          valLab.setAttribute('x', xCenter);
+          valLab.setAttribute('y', pct != null ? barY - 5 : axisY - 8);
+          valLab.setAttribute('font-size', '9');
+          valLab.setAttribute('font-weight', '700');
+          valLab.setAttribute('text-anchor', 'middle');
+          valLab.setAttribute('fill', 'var(--text)');
+          valLab.textContent = pct != null ? Math.round(pct) + '%' : '—';
+          svg.appendChild(valLab);
+          var termLab = document.createElementNS(svgNS, 'text');
+          termLab.setAttribute('x', xCenter);
+          termLab.setAttribute('y', axisY + 14);
+          termLab.setAttribute('font-size', '9');
+          termLab.setAttribute('text-anchor', 'middle');
+          termLab.setAttribute('fill', 'var(--muted)');
+          var lab = pt.termLabel || '—';
+          termLab.textContent = lab.length > 12 ? lab.slice(0, 10) + '…' : lab;
+          svg.appendChild(termLab);
+        });
+        return el('div', { className: 'class-gpa-trend-chart-card' }, [
+          el('div', { className: 'class-gpa-trend-chart-title' }, title),
+          svg,
+          el('p', { className: 'class-gpa-trend-chart-note' }, 'Marks % by assessment term (latest session year: ' + sessionYear + ').')
+        ]);
+      }
+      function renderStudentSubjectChartsSection(recs) {
+        var sy = latestStudentSessionYear(recs);
+        if (!sy) return null;
+        var slots = [
+          { key: 'english', title: 'English', color: '#0d9488' },
+          { key: 'urdu', title: 'Urdu', color: '#457b9d' },
+          { key: 'math', title: 'Math', color: '#c2410c' }
+        ];
+        var cards = slots.map(function(s) {
+          var series = buildStudentSubjectPctSeries(recs, sy, s.key);
+          return renderStudentSubjectPctChart(series, s.title + ' · marks %', sy, s.color);
+        });
+        return el('section', { className: 'student-subject-charts' }, [
+          el('h3', { className: 'panel-part-title', style: { marginBottom: '0.5rem', border: 'none', paddingBottom: 0 } }, 'Subject-wise graphs'),
+          el('p', { style: { margin: '0 0 0.75rem 0', fontSize: '0.875rem', color: 'var(--muted)', lineHeight: 1.45 } }, 'Each chart shows this student’s marks percentage across assessment terms for the latest session year (' + sy + ').'),
+          el('div', { className: 'student-subject-charts-grid' }, cards)
+        ]);
+      }
       function normalizeTeacherUidForApi(raw) {
         if (raw == null || raw === '') return '';
         if (typeof raw === 'number' && Number.isFinite(raw)) return String(Math.trunc(raw));
@@ -929,6 +1164,24 @@
           if (Object.prototype.hasOwnProperty.call(uidMap, ks) && uidMap[ks] != null) return uidMap[ks];
         }
         return null;
+      }
+      /**
+       * True when groups look like dashboard summaries (student_count > 0) but no per-student rows yet.
+       * In that case we must call /api/student-results so marks from BigQuery appear on the assessment page.
+       */
+      function studentGroupsNeedDetailFetch(groups) {
+        if (!groups || !groups.length) return false;
+        var anyStudentRows = false;
+        var anyClassWithStudents = false;
+        for (var i = 0; i < groups.length; i++) {
+          var g = groups[i];
+          var sl = (g.students && g.students.length) || 0;
+          if (sl > 0) anyStudentRows = true;
+          var sc = g.student_count != null ? Number(g.student_count) : NaN;
+          if (Number.isFinite(sc) && sc > 0) anyClassWithStudents = true;
+        }
+        if (anyStudentRows) return false;
+        return anyClassWithStudents;
       }
       function normalizeSubjectStr(s) {
         return String(s == null ? '' : s).trim().toLowerCase();
@@ -961,6 +1214,7 @@
         var uidRaw = teacher.user_id != null ? teacher.user_id : teacher.User_ID != null ? teacher.User_ID : '';
         var uid = normalizeTeacherUidForApi(uidRaw);
         if (!uid) return [];
+        if (teacher._fetchedStudentGroups && teacher._fetchedStudentGroups.length) return teacher._fetchedStudentGroups;
         var uidMap = dashPayload != null && Object.prototype.hasOwnProperty.call(dashPayload, 'student_results_by_user_id')
           ? dashPayload.student_results_by_user_id
           : null;
@@ -1020,7 +1274,7 @@
         if (!s) return null;
         if (s === 'english' || s.indexOf('english') === 0) return 'english';
         if (s === 'urdu') return 'urdu';
-        if (s === 'math' || s === 'mathematics' || s.indexOf('math') === 0) return 'math';
+        if (s === 'math' || s === 'maths' || s === 'mathematics' || s.indexOf('math') !== -1) return 'math';
         return null;
       }
       /**
@@ -1267,9 +1521,27 @@
         ]);
         return wrap;
       }
-      function renderSummaryTableFromGroups(groups, teacherUid) {
-        if (!groups || !groups.length) return null;
-        var sortedGroups = sortGroupsBySessionAndTerm(groups);
+      function classResultsRowKey(g) {
+        return [
+          String(g.session_year || '').trim(),
+          String(g.term || '').trim(),
+          String(g.grade || '').trim(),
+          normalizeSubjectStr(g.subject)
+        ].join('\t');
+      }
+      /** Latest session year’s Final Assessment row from an already grade/subject–filtered list. */
+      function pickFinalSpotlightForSelectedClass(sortedRows) {
+        if (!sortedRows || !sortedRows.length) return null;
+        var finals = sortedRows.filter(function(g) { return isFinalAssessmentTerm(g.term); });
+        if (!finals.length) return null;
+        finals.sort(function(a, b) {
+          return String(b.session_year || '').localeCompare(String(a.session_year || ''), undefined, { numeric: true });
+        });
+        return finals[0];
+      }
+      function renderSummaryTableFromGroups(groups, teacherUid, spotlightGroup) {
+        groups = groups || [];
+        if (!groups.length && !spotlightGroup) return null;
         var thead = el('tr', {}, [
           el('th', {}, 'Session year'),
           el('th', {}, 'Term'),
@@ -1278,15 +1550,15 @@
           el('th', { className: 'col-score' }, 'Students'),
           el('th', { className: 'col-score' }, 'Class GPA')
         ]);
-        var rows = sortedGroups.map(function(g) {
+        function makeSummaryRow(g, isSpotlight) {
           if (teacherUid && !g.teacher_user_id) g.teacher_user_id = teacherUid;
           var hasDetail = g.students && g.students.length > 0;
           var attrs = {
-            className: 'student-results-summary-row' + (hasDetail ? '' : ' student-results-summary-row--disabled')
+            className: 'student-results-summary-row' + (isSpotlight ? ' student-results-final-spotlight-row' : '') + (hasDetail ? '' : ' student-results-summary-row--disabled')
           };
           if (hasDetail) {
             attrs.tabIndex = 0;
-            attrs.title = 'View student list';
+            attrs.title = isSpotlight ? 'Final assessment — view student list' : 'View student list';
             attrs.onClick = function() { openStudentResultsGroupModal(g); };
             attrs.onKeydown = function(e) {
               if (e.key === 'Enter' || e.key === ' ') {
@@ -1297,27 +1569,53 @@
           } else {
             attrs.title = 'Student marks not loaded (summary only)';
           }
-          var gpaCell = '—';
+          var gpaDisplay = '—';
           if (g.class_gpa != null && g.class_gpa !== '' && Number.isFinite(Number(g.class_gpa))) {
-            gpaCell = Number(g.class_gpa).toFixed(2);
+            gpaDisplay = Number(g.class_gpa).toFixed(2);
             if (g.class_gpa_students_count != null && Number(g.class_gpa_students_count) > 0 && g.student_count != null && Number(g.student_count) > Number(g.class_gpa_students_count)) {
-              gpaCell += ' (' + g.class_gpa_students_count + '/' + g.student_count + ' graded)';
+              gpaDisplay += ' (' + g.class_gpa_students_count + '/' + g.student_count + ' graded)';
             }
           }
+          var gpaMainNum = '—';
+          var gpaSubNote = '';
+          if (g.class_gpa != null && g.class_gpa !== '' && Number.isFinite(Number(g.class_gpa))) {
+            gpaMainNum = Number(g.class_gpa).toFixed(2);
+            if (g.class_gpa_students_count != null && Number(g.class_gpa_students_count) > 0 && g.student_count != null && Number(g.student_count) > Number(g.class_gpa_students_count)) {
+              gpaSubNote = g.class_gpa_students_count + '/' + g.student_count + ' graded';
+            }
+          }
+          var syCell = isSpotlight
+            ? el('td', {}, [
+                el('span', { className: 'final-spotlight-ribbon' }, 'Final result'),
+                el('div', { className: 'final-spotlight-session' }, g.session_year || '—')
+              ])
+            : el('td', {}, g.session_year || '—');
+          var gpaCell = isSpotlight
+            ? el('td', { className: 'col-score' }, el('span', { className: 'final-spotlight-gpa' }, [
+                gpaMainNum,
+                gpaSubNote ? el('span', { className: 'final-spotlight-gpa-sub' }, gpaSubNote) : null
+              ].filter(Boolean)))
+            : el('td', { className: 'col-score' }, gpaDisplay);
           return el('tr', attrs, [
-            el('td', {}, g.session_year || '—'),
+            syCell,
             el('td', {}, normalizeTermLabel(g.term) || '—'),
             el('td', {}, g.grade || '—'),
             el('td', {}, g.subject || '—'),
             el('td', { className: 'col-score' }, String(g.student_count != null ? g.student_count : ((g.students && g.students.length) || 0))),
-            el('td', { className: 'col-score' }, gpaCell)
+            gpaCell
           ]);
-        });
+        }
+        var sortedGroups = sortGroupsBySessionAndTerm(groups);
+        var rows = sortedGroups.map(function(g) { return makeSummaryRow(g, false); });
+        var foot = spotlightGroup
+          ? el('tfoot', { className: 'student-results-final-spotlight-foot' }, makeSummaryRow(spotlightGroup, true))
+          : null;
         return el('div', { className: 'fico-kpi-table-wrap student-results-table-wrap' }, [
           el('table', { className: 'fico-kpi-table student-results-summary-table' }, [
             el('thead', {}, thead),
-            el('tbody', {}, rows)
-          ])
+            el('tbody', {}, rows),
+            foot
+          ].filter(Boolean))
         ]);
       }
       function renderStudentResultsSection(teacher, dashPayload) {
@@ -2812,19 +3110,28 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
                   el('div', { className: 'class-gpa-trend-chart-title' }, 'Term-wise class GPA trend'),
                   el('p', { className: 'class-gpa-trend-chart-note', style: { margin: 0 } }, 'Select both a grade and a subject above to plot GPA across terms for that class.')
                 ]);
-            var tbl = renderSummaryTableFromGroups(tableRows, uid || currentTeacherId || '');
+            var sortedClassTableRows = sortGroupsBySessionAndTerm(tableRows);
+            var finalSpotlightGroup = (classGpaGrade && classGpaSubject)
+              ? pickFinalSpotlightForSelectedClass(sortedClassTableRows)
+              : null;
+            var classTableBodyRows = finalSpotlightGroup
+              ? sortedClassTableRows.filter(function(g) { return classResultsRowKey(g) !== classResultsRowKey(finalSpotlightGroup); })
+              : sortedClassTableRows;
+            var tbl = renderSummaryTableFromGroups(classTableBodyRows, uid || currentTeacherId || '', finalSpotlightGroup);
             var mainBlocks = [hero, filters];
             if (finalCoreChartEl) mainBlocks.push(finalCoreChartEl);
-            mainBlocks.push(
-              chartEl,
-              el('h3', { className: 'panel-part-title', style: { marginTop: '1.25rem', border: 'none' } }, 'Classes'),
-              tbl || el('p', { style: { color: 'var(--muted)' } }, 'No rows match the current filters.')
-            );
+            mainBlocks.push(chartEl);
+            mainBlocks.push(el('h3', { className: 'panel-part-title', style: { marginTop: '1.25rem', border: 'none' } }, 'Classes'));
+            if (finalSpotlightGroup) {
+              mainBlocks.push(el('p', { className: 'class-final-spotlight-hint' },
+                'Final assessment for Grade ' + classGpaGrade + ' · ' + classGpaSubject + ' is highlighted at the bottom — your end-of-year class outcome.'));
+            }
+            mainBlocks.push(tbl || el('p', { style: { color: 'var(--muted)' } }, 'No rows match the current filters.'));
             var main = el('main', { className: 'container class-gpa-trend-page', style: { paddingTop: '1rem' } }, mainBlocks);
             setView(el('div', {}, [header, main]));
             updateUrl(false);
           }
-          if (!allGroups.length) {
+          if (!allGroups.length || studentGroupsNeedDetailFetch(allGroups)) {
             setView(el('div', {}, [
               el('header', { className: 'header' }, el('div', { className: 'container header-inner' }, [
                 el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back')
@@ -2925,7 +3232,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             setView(el('div', {}, [header, main]));
             updateUrl(false);
           }
-          if (!allGroups.length) {
+          if (!allGroups.length || studentGroupsNeedDetailFetch(allGroups)) {
             setView(el('div', {}, [
               el('header', { className: 'header' }, el('div', { className: 'container header-inner' }, [
                 el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back')
@@ -3028,6 +3335,8 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
                   recs[0].teacher_name ? el('p', { className: 'role' }, 'Teacher: ' + recs[0].teacher_name + (recs[0].teacher_user_id ? ' (' + recs[0].teacher_user_id + ')' : '')) : null
                 ].filter(Boolean)))
               ]));
+              var chartsSection = renderStudentSubjectChartsSection(recs);
+              if (chartsSection) body.appendChild(chartsSection);
               var head = el('tr', {}, [
                 el('th', {}, 'Session Year'),
                 el('th', {}, 'Term'),
@@ -3036,7 +3345,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
                 el('th', { className: 'col-score' }, 'Obtained'),
                 el('th', { className: 'col-score' }, 'Total'),
                 el('th', { className: 'col-score' }, '%'),
-                el('th', {}, 'Letter'),
+                el('th', { className: 'col-score' }, 'Student_Grade'),
                 el('th', {}, 'Result'),
                 el('th', {}, 'Teacher')
               ]);
@@ -3050,9 +3359,9 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
                   el('td', {}, r.term || '—'),
                   el('td', {}, r.grade || '—'),
                   el('td', {}, r.subject || '—'),
-                  el('td', { className: 'col-score' }, r.obtained_marks != null ? String(r.obtained_marks) : '—'),
-                  el('td', { className: 'col-score' }, r.total_marks != null ? String(r.total_marks) : '—'),
-                  el('td', { className: 'col-score' }, r.marks_percentage != null ? Number(r.marks_percentage).toFixed(1) + '%' : '—'),
+                  el('td', { className: 'col-score' }, studentHistoryObtainedCell(r)),
+                  el('td', { className: 'col-score' }, studentHistoryTotalCell(r)),
+                  el('td', { className: 'col-score' }, studentHistoryPctCellFromRecord(r)),
                   el('td', { className: 'col-score' }, r.student_grade || '—'),
                   el('td', {}, r.result || '—'),
                   el('td', {}, teacherCell)
