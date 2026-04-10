@@ -36,6 +36,34 @@
     .logo-icon svg { width: 20px; height: 20px; color: white; }
     .logo h1 { font-family: Outfit, sans-serif; font-weight: 700; font-size: 1.2rem; margin: 0; letter-spacing: -0.01em; line-height: 1.2; }
     .logo p { color: var(--muted); font-size: 0.8125rem; font-weight: 400; margin: 0.2rem 0 0 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+    .logo.assessment-results-logo { flex-direction: column; align-items: flex-start; gap: 0.1rem; }
+    .logo.assessment-results-logo > div { min-width: 0; max-width: 100%; }
+    .assessment-header-teacher-name {
+      display: block; font-family: Outfit, sans-serif; font-size: 1.15rem; font-weight: 800;
+      color: #1d3557; letter-spacing: -0.025em; line-height: 1.25; margin-top: 0.4rem;
+    }
+    .assessment-header-school-line {
+      display: block; font-size: 0.9rem; font-weight: 600; color: #2563a8; margin-top: 0.15rem; line-height: 1.35;
+    }
+    .assessment-gpa-callout {
+      margin: 0.9rem 0 0 0; padding: 0.85rem 1.05rem; border-radius: 12px;
+      border: 1px solid rgba(13, 148, 136, 0.4);
+      background: linear-gradient(145deg, rgba(13, 148, 136, 0.12), rgba(29, 53, 87, 0.07));
+      box-shadow: 0 2px 12px rgba(13, 148, 136, 0.08);
+    }
+    .assessment-gpa-row1 { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.5rem 0.75rem; }
+    .assessment-gpa-label {
+      font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.14em; color: #0f766e;
+    }
+    .assessment-gpa-num {
+      font-family: Outfit, sans-serif; font-size: 1.75rem; font-weight: 800; color: #1d3557;
+      font-feature-settings: 'tnum'; line-height: 1; letter-spacing: -0.03em;
+    }
+    .assessment-gpa-formula {
+      margin-top: 0.55rem; padding-top: 0.55rem; border-top: 1px solid rgba(29, 53, 87, 0.14);
+      font-size: 0.84rem; font-weight: 700; color: var(--text); line-height: 1.5;
+    }
+    .assessment-gpa-suffix { font-weight: 600; color: var(--muted); font-size: 0.8rem; }
     .nav { display: inline-flex; align-items: center; gap: 0.5rem; }
     .nav-wrap { display: inline-flex; gap: 0.25rem; padding: 4px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
     .nav-btn { padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.875rem; font-weight: 500; line-height: 1.4; background: transparent; color: var(--muted); border: none; cursor: pointer; letter-spacing: 0.005em; }
@@ -146,13 +174,62 @@
     .fico-kpi-coverage-ok { color: #15803d; font-weight: 600; }
     .fico-kpi-modal-foot { flex-shrink: 0; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); font-size: 0.8125rem; color: var(--muted); }
     .fico-kpi-modal-foot strong { color: var(--text); }
-    .student-results-panel { margin-top: 0.25rem; }
-    .student-results-panel > .panel-part-title { border-bottom: none; padding-bottom: 0; margin-bottom: 0.75rem; }
+    .student-results-panel { margin-top: 0; }
+    .student-results-panel .panel-section-card > .panel-part-title { margin-bottom: 0.65rem; }
     .student-results-summary-table tbody tr.student-results-summary-row { cursor: pointer; transition: background 0.15s; }
     .student-results-summary-table tbody tr.student-results-summary-row:hover { background: rgba(69,123,157,0.12); }
     .student-results-summary-table tbody tr.student-results-summary-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .student-results-summary-table tbody tr.student-results-summary-row--disabled { cursor: default; opacity: 0.88; }
     .student-results-summary-table tbody tr.student-results-summary-row--disabled:hover { background: transparent; }
+    .student-results-summary-table tbody td[rowspan] { vertical-align: middle; }
+    .fico-kpi-table .col-actions { text-align: center; vertical-align: middle; white-space: nowrap; }
+    .student-results-see-list-btn {
+      font-size: 0.7rem; font-weight: 700; font-family: inherit; letter-spacing: 0.02em;
+      padding: 0.35rem 0.55rem; border-radius: 6px; border: 1px solid rgba(29, 53, 87, 0.35);
+      background: rgba(69, 123, 157, 0.12); color: var(--text); cursor: pointer; white-space: nowrap;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .student-results-see-list-btn:hover:not(:disabled) {
+      background: rgba(13, 148, 136, 0.2); border-color: rgba(13, 148, 136, 0.5);
+    }
+    .student-results-see-list-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .student-results-see-list-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .class-gpa-tier { font-weight: 700; font-family: Outfit, sans-serif; font-feature-settings: 'tnum'; }
+    .class-gpa-tier-red { color: #b91c1c; }
+    .class-gpa-tier-orange { color: #c2410c; }
+    .class-gpa-tier-yellow { color: #a16207; }
+    .class-gpa-tier-green { color: #15803d; }
+    .class-gpa-tier-green-strong { color: #166534; }
+    .class-gpa-tier-suffix { color: var(--muted); font-weight: 600; font-size: 0.92em; margin-left: 0.15em; }
+    .final-spotlight-gpa .class-gpa-tier { font-weight: 800; font-size: 1em; }
+    .student-grade-dist-panel {
+      margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--border); border-radius: 12px;
+      background: linear-gradient(165deg, rgba(13, 148, 136, 0.06), rgba(29, 53, 87, 0.04));
+    }
+    .student-grade-dist-title {
+      margin: 0 0 0.85rem 0; font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.12em; color: var(--muted); font-family: Outfit, sans-serif;
+    }
+    .student-grade-dist-rows { display: flex; flex-direction: column; gap: 0.5rem; }
+    .student-grade-dist-row {
+      display: grid; grid-template-columns: minmax(3.5rem, 4.25rem) 1fr minmax(5.5rem, 6.5rem);
+      align-items: center; gap: 0.65rem; font-size: 0.8125rem;
+    }
+    .student-grade-dist-label {
+      font-weight: 800; font-family: Outfit, sans-serif; color: var(--text); font-feature-settings: 'tnum';
+    }
+    .student-grade-dist-bar-wrap {
+      height: 1.1rem; border-radius: 6px; background: rgba(29, 53, 87, 0.08); overflow: hidden; min-width: 0;
+    }
+    .student-grade-dist-bar {
+      height: 100%; border-radius: 6px; min-width: 4px; transition: width 0.25s ease;
+    }
+    .student-grade-dist-count {
+      text-align: right; font-weight: 700; font-feature-settings: 'tnum'; color: var(--text); font-size: 0.78rem; white-space: nowrap;
+    }
+    @media (max-width: 520px) {
+      .student-grade-dist-row { grid-template-columns: 3rem 1fr minmax(4.5rem, 1fr); gap: 0.45rem; }
+    }
     .student-results-hint { line-height: 1.45; }
     .student-subject-charts { margin-bottom: 1.25rem; }
     .student-subject-charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; align-items: start; }
@@ -397,8 +474,26 @@
     .panel-part-title { font-family: Outfit, sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
     .panel-part-title-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin: 0 0 0.75rem 0; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border); }
     .panel-part-title-row .panel-part-title { margin: 0; padding-bottom: 0; border-bottom: none; }
+    .panel-part-title.assessment-students-main-heading {
+      display: block; width: 100%; box-sizing: border-box; text-align: center;
+      font-size: 1.05rem; font-weight: 800; color: #1d3557; letter-spacing: 0.08em; line-height: 1.45;
+      margin: 0 0 0.85rem 0; padding: 0.55rem 1rem 0.85rem;
+      border: none; border-bottom: 3px solid rgba(13, 148, 136, 0.5);
+      white-space: normal; text-wrap: balance;
+    }
     .panel-breakdown-caption { font-family: Outfit, sans-serif; font-size: 0.95rem; font-weight: 600; color: var(--muted); background: rgba(168, 218, 220, 0.2); border: 1px solid rgba(69, 123, 157, 0.3); border-radius: 999px; padding: 0.4rem 0.9rem; }
     .obs-compare-block { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    .obs-compare-toggle-wrap { margin-bottom: 0; }
+    .obs-compare-toggle-btn {
+      display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.5rem 1rem; border-radius: 10px;
+      font-size: 0.8125rem; font-weight: 700; font-family: inherit; cursor: pointer;
+      border: 1px solid rgba(29, 53, 87, 0.32); background: rgba(69, 123, 157, 0.12); color: var(--text);
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .obs-compare-toggle-btn:hover { background: rgba(13, 148, 136, 0.14); border-color: rgba(13, 148, 136, 0.42); }
+    .obs-compare-toggle-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .obs-compare-panel-inner { margin-top: 0.75rem; }
+    .obs-compare-panel-inner.obs-compare-panel-hidden { display: none; }
     .obs-compare-heading { font-family: Outfit, sans-serif; font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin: 0 0 0.35rem 0; }
     .obs-compare-sub { font-size: 0.75rem; color: var(--muted); margin: 0 0 0.75rem 0; line-height: 1.45; }
     .obs-compare-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); }
@@ -413,15 +508,44 @@
     .obs-compare-table tbody td:first-child { text-align: left; font-weight: 600; font-size: 0.78rem; position: sticky; left: 0; background: var(--surface); box-shadow: 4px 0 8px -4px rgba(0,0,0,0.12); z-index: 1; }
     .obs-compare-cell { font-feature-settings: 'tnum'; }
     .obs-compare-cell--bar { padding: 0.5rem 0.45rem !important; vertical-align: middle; }
-    .obs-compare-bar-track { width: 100%; height: 10px; background: rgba(0,0,0,0.09); border-radius: 5px; overflow: hidden; margin-bottom: 0.35rem; min-width: 4rem; }
-    .obs-compare-bar-track--total { height: 12px; background: rgba(13, 148, 136, 0.15); }
-    .obs-compare-bar-fill { height: 100%; border-radius: 5px; min-width: 0; transition: width 0.28s ease; box-shadow: inset 0 1px 0 rgba(255,255,255,0.2); }
+    .obs-compare-bar-track { width: 100%; height: 5px; background: rgba(0,0,0,0.09); border-radius: 3px; overflow: hidden; margin-bottom: 0.3rem; min-width: 4rem; }
+    .obs-compare-bar-track--total { height: 6px; background: rgba(13, 148, 136, 0.15); border-radius: 3px; }
+    .obs-compare-bar-fill { height: 100%; border-radius: 3px; min-width: 0; transition: width 0.28s ease; box-shadow: inset 0 1px 0 rgba(255,255,255,0.15); }
     .obs-compare-bar-val { font-size: 0.72rem; font-weight: 600; color: var(--text); font-feature-settings: 'tnum'; line-height: 1.25; }
     .obs-compare-bar-empty { color: var(--muted); font-size: 0.75rem; padding: 0.4rem 0; }
     .obs-compare-total-row .obs-compare-bar-val { font-size: 0.78rem; }
     .obs-compare-total-row td { background: rgba(168, 218, 220, 0.14); font-weight: 700; border-top: 2px solid var(--border); }
     .obs-compare-total-row td:first-child { background: rgba(168, 218, 220, 0.22); }
     .panel-part-content { margin-top: 0; }
+    .panel-part--report-sections { display: flex; flex-direction: column; gap: 1.35rem; }
+    .panel-section-card {
+      border-radius: 14px; border: 1px solid rgba(29, 53, 87, 0.16);
+      background: var(--card-bg);
+      box-shadow: 0 8px 28px rgba(29, 53, 87, 0.09), 0 1px 0 rgba(255, 255, 255, 0.6) inset;
+      padding: 1.15rem 1.3rem 1.35rem;
+      min-width: 0;
+    }
+    .panel-main-column .panel-section-card .panel-part-title {
+      font-size: 0.88rem; font-weight: 800; letter-spacing: 0.06em; color: #1d3557;
+      text-transform: uppercase; font-family: Outfit, sans-serif;
+      border-bottom: 2px solid rgba(13, 148, 136, 0.42); padding-bottom: 0.55rem; margin: 0 0 0.7rem 0;
+      white-space: normal; line-height: 1.3;
+    }
+    .panel-main-column .panel-section-card .panel-part-title-row {
+      border-bottom: 2px solid rgba(13, 148, 136, 0.42); padding-bottom: 0.55rem; margin: 0 0 0.75rem 0;
+      align-items: center;
+    }
+    .panel-main-column .panel-section-card .panel-part-title-row .panel-part-title {
+      border-bottom: none; padding-bottom: 0; margin: 0;
+    }
+    .panel-main-column .panel-section-card .panel-part-caption {
+      font-size: 0.8125rem !important; font-weight: 600; color: #3d6a8a !important;
+      margin: -0.2rem 0 0.75rem 0 !important; line-height: 1.45;
+    }
+    .panel-main-column .panel-section-card .panel-breakdown-caption {
+      font-size: 0.8125rem; font-weight: 700; color: #1d3557; border-color: rgba(13, 148, 136, 0.35);
+      background: rgba(13, 148, 136, 0.1);
+    }
     .panel-summary { border-radius: 1rem; border: 1px solid var(--border); background: var(--surface); padding: 1.5rem; margin-bottom: 0.75rem; }
     .panel-summary-top { display: flex; gap: 1rem; align-items: center; }
     .panel-summary-score { width: 80px; height: 80px; border-radius: 1rem; background: var(--surface); display: flex; align-items: center; justify-content: center; font-family: Outfit; font-size: 1.5rem; font-weight: 800; letter-spacing: -0.03em; font-feature-settings: 'tnum'; line-height: 1; }
@@ -922,6 +1046,77 @@
           el('tbody', {}, trs)
         ]);
       }
+      function normalizeStudentLetterGradeForDist(s) {
+        var g = s && s.student_grade != null ? String(s.student_grade).trim() : '';
+        if (!g) return '';
+        return g.toUpperCase().replace(/\s+/g, '');
+      }
+      function letterGradeDistributionRank(label) {
+        if (!label || label === '—') return 999;
+        var u = String(label).toUpperCase().replace(/\s+/g, '');
+        if (u === 'A1' || u.indexOf('A1') === 0) return 6;
+        var order = ['F', 'E', 'D', 'C', 'B', 'A'];
+        var i = order.indexOf(u);
+        if (i >= 0) return i;
+        if (u.charAt(0) === 'A') return 5;
+        return 100 + u.charCodeAt(0);
+      }
+      function letterGradeDistributionBarColor(rank, label) {
+        if (!label || label === '—' || rank >= 999) return 'rgba(100, 116, 139, 0.45)';
+        var colors = ['#b91c1c', '#c2410c', '#ca8a04', '#a16207', '#15803d', '#166534', '#059669'];
+        return colors[Math.min(Math.max(rank, 0), colors.length - 1)] || '#64748b';
+      }
+      /** Horizontal bar chart of counts per letter grade (student_grade). */
+      function renderStudentGradeDistributionVisual(students) {
+        var list = students || [];
+        if (!list.length) return null;
+        var counts = {};
+        list.forEach(function(s) {
+          var g = normalizeStudentLetterGradeForDist(s);
+          var key = g || '—';
+          counts[key] = (counts[key] || 0) + 1;
+        });
+        var entries = Object.keys(counts).map(function(k) { return { grade: k, count: counts[k] }; });
+        entries.sort(function(a, b) {
+          var ra = letterGradeDistributionRank(a.grade);
+          var rb = letterGradeDistributionRank(b.grade);
+          if (ra !== rb) return ra - rb;
+          return String(a.grade).localeCompare(String(b.grade));
+        });
+        var total = list.length;
+        var maxCount = 0;
+        entries.forEach(function(e) { if (e.count > maxCount) maxCount = e.count; });
+        if (maxCount < 1) maxCount = 1;
+        var parts = entries.map(function(e) {
+          var rank = letterGradeDistributionRank(e.grade);
+          var barPct = (e.count / maxCount) * 100;
+          var sharePct = total > 0 ? (e.count / total) * 100 : 0;
+          var displayLabel = e.grade === '—' ? 'No grade' : e.grade;
+          return el('div', { className: 'student-grade-dist-row' }, [
+            el('span', { className: 'student-grade-dist-label' }, displayLabel),
+            el('div', { className: 'student-grade-dist-bar-wrap' }, [
+              el('div', {
+                className: 'student-grade-dist-bar',
+                style: { width: barPct + '%', background: letterGradeDistributionBarColor(rank, e.grade) },
+                title: displayLabel + ': ' + e.count + ' student(s)'
+              })
+            ]),
+            el('span', { className: 'student-grade-dist-count' }, String(e.count) + ' · ' + sharePct.toFixed(0) + '%')
+          ]);
+        });
+        var summaryBits = entries.map(function(e) {
+          var lab = e.grade === '—' ? 'No grade' : e.grade;
+          return lab + ' ' + e.count;
+        }).join(', ');
+        return el('div', {
+          className: 'student-grade-dist-panel',
+          role: 'img',
+          'aria-label': 'Grade distribution by count: ' + summaryBits + ', total ' + total + ' students'
+        }, [
+          el('h4', { className: 'student-grade-dist-title' }, 'Grade distribution'),
+          el('div', { className: 'student-grade-dist-rows' }, parts)
+        ]);
+      }
       function openStudentResultsGroupModal(group) {
         if (!group) return;
         if (_acrNav.goAssessmentResults) {
@@ -1199,6 +1394,23 @@
         if (!s) return '';
         return s.replace(/_/g, ' ').replace(/\s+/g, ' ').trim();
       }
+      /** Compact term label for class table (First term … Final term). */
+      function termLabelForClassSummaryTable(term) {
+        var r = termOrderRank(term);
+        if (r === 0) return 'First term';
+        if (r === 1) return 'Second term';
+        if (r === 2) return 'Third term';
+        if (r === 3) return 'Final term';
+        var n = normalizeTermLabel(term);
+        return n || '—';
+      }
+      function classResultsMergeKey(g) {
+        return [
+          String(g.session_year || '').trim(),
+          String(g.term || '').trim(),
+          String(g.grade != null ? g.grade : '').trim()
+        ].join('\t');
+      }
       function sortGroupsBySessionAndTerm(groups) {
         return (groups || []).slice().sort(function(a, b) {
           var sy = String(a.session_year || '').localeCompare(String(b.session_year || ''));
@@ -1320,17 +1532,26 @@
       function renderFinalAssessmentCoreChart(payload, gradeLabel) {
         var items = payload && payload.items ? payload.items : [];
         var sy = payload && payload.sessionYear ? payload.sessionYear : '';
-        var title = 'Final assessment — English, Urdu & Math' + (gradeLabel ? ' · Grade ' + gradeLabel : '') + (sy ? ' · ' + sy : '');
+        if (!items.length) {
+          var emptyTitle = 'Final assessment' + (gradeLabel ? ' · Grade ' + gradeLabel : '') + (sy ? ' · ' + sy : '');
+          return el('div', { className: 'class-gpa-trend-chart-card' }, [
+            el('div', { className: 'class-gpa-trend-chart-title' }, emptyTitle),
+            el('p', { className: 'class-gpa-trend-chart-note', style: { margin: 0 } }, 'No Final Assessment row for the selected subject in the latest session for this grade.')
+          ]);
+        }
+        var subjectTitlePart = items.length === 3 ? 'English, Urdu & Math' : items.map(function(e) { return e.label; }).join(', ');
+        var title = 'Final assessment — ' + subjectTitlePart + (gradeLabel ? ' · Grade ' + gradeLabel : '') + (sy ? ' · ' + sy : '');
         var svgNS = 'http://www.w3.org/2000/svg';
         var width = 560;
         var height = 240;
         var padding = { top: 28, right: 16, bottom: 48, left: 40 };
         var innerW = width - padding.left - padding.right;
         var innerH = height - padding.top - padding.bottom;
-        var maxGpa = 4;
-        var n = 3;
+        var maxGpa = 6;
+        var n = Math.max(items.length, 1);
         var barW = Math.min(56, Math.max(28, (innerW / n) * 0.5));
         var xStep = innerW / n;
+        var colorByKey = { english: '#0d9488', urdu: '#457b9d', math: '#c2410c' };
         var colors = ['#0d9488', '#457b9d', '#c2410c'];
         var svg = document.createElementNS(svgNS, 'svg');
         svg.setAttribute('width', '100%');
@@ -1346,8 +1567,8 @@
         axisLine.setAttribute('stroke', 'var(--border)');
         axisLine.setAttribute('stroke-width', '1');
         svg.appendChild(axisLine);
-        for (var gi = 0; gi <= 4; gi++) {
-          var val = (maxGpa / 4) * gi;
+        for (var gi = 0; gi <= maxGpa; gi++) {
+          var val = gi;
           var y = padding.top + innerH - (val / maxGpa) * innerH;
           var grid = document.createElementNS(svgNS, 'line');
           grid.setAttribute('x1', padding.left);
@@ -1363,7 +1584,7 @@
           lbl.setAttribute('font-size', '9');
           lbl.setAttribute('text-anchor', 'end');
           lbl.setAttribute('fill', 'var(--muted)');
-          lbl.textContent = val === 0 ? '0' : val.toFixed(1);
+          lbl.textContent = String(val);
           svg.appendChild(lbl);
         }
         items.forEach(function(entry, i) {
@@ -1380,7 +1601,7 @@
           rect.setAttribute('width', barW);
           rect.setAttribute('height', gpa != null ? Math.max(barH, 2) : 2);
           rect.setAttribute('rx', 4);
-          rect.setAttribute('fill', colors[i] || '#0d9488');
+          rect.setAttribute('fill', colorByKey[entry.key] || colors[i] || '#0d9488');
           rect.setAttribute('opacity', gpa != null ? '0.92' : '0.25');
           rect.style.cursor = (g && g.students && g.students.length) ? 'pointer' : 'default';
           if (g && g.students && g.students.length) {
@@ -1409,7 +1630,7 @@
           subLab.textContent = entry.label;
           svg.appendChild(subLab);
         });
-        var note = 'Class GPA at Final Assessment for the latest session year in the data (scale 0–4). Bars with no class row for this term show —.';
+        var note = 'Class GPA at Final Assessment for the latest session year (A1=6, A=5, B=4, C=3, D=2, E=1, F=0; average weight per student). Bars with no class row for this term show —.';
         return el('div', { className: 'class-gpa-trend-chart-card' }, [
           el('div', { className: 'class-gpa-trend-chart-title' }, title),
           svg,
@@ -1425,7 +1646,7 @@
         var padding = { top: 28, right: 16, bottom: 56, left: 40 };
         var innerW = width - padding.left - padding.right;
         var innerH = height - padding.top - padding.bottom;
-        var maxGpa = 4;
+        var maxGpa = 6;
         var n = sorted.length;
         var barW = Math.min(36, Math.max(14, (innerW / Math.max(n, 1)) * 0.55));
         var xStep = n > 0 ? innerW / n : innerW;
@@ -1443,8 +1664,8 @@
         axisLine.setAttribute('stroke', 'var(--border)');
         axisLine.setAttribute('stroke-width', '1');
         svg.appendChild(axisLine);
-        for (var gi = 0; gi <= 4; gi++) {
-          var val = (maxGpa / 4) * gi;
+        for (var gi = 0; gi <= maxGpa; gi++) {
+          var val = gi;
           var y = padding.top + innerH - (val / maxGpa) * innerH;
           var grid = document.createElementNS(svgNS, 'line');
           grid.setAttribute('x1', padding.left);
@@ -1460,7 +1681,7 @@
           lbl.setAttribute('font-size', '9');
           lbl.setAttribute('text-anchor', 'end');
           lbl.setAttribute('fill', 'var(--muted)');
-          lbl.textContent = val === 0 ? '0' : val.toFixed(1);
+          lbl.textContent = String(val);
           svg.appendChild(lbl);
         }
         sorted.forEach(function(g, i) {
@@ -1517,7 +1738,7 @@
         var wrap = el('div', { className: 'class-gpa-trend-chart-card' }, [
           el('div', { className: 'class-gpa-trend-chart-title' }, 'Term-wise class GPA trend' + (gradeLabel || subjectLabel ? ' · ' + gradeLabel + ' · ' + subjectLabel : '')),
           svg,
-          el('p', { className: 'class-gpa-trend-chart-note' }, 'Y-axis 0–4 (letter-grade weight scale). Click a bar to open the student list for that session, term, grade, and subject.')
+          el('p', { className: 'class-gpa-trend-chart-note' }, 'Y-axis 0–6 (A1=6, A=5, B=4, C=3, D=2, E=1, F=0; mean weight per student). Click a bar to open the student list for that session, term, grade, and subject.')
         ]);
         return wrap;
       }
@@ -1539,6 +1760,16 @@
         });
         return finals[0];
       }
+      /** Class GPA color bands: red 0–2, orange 2–2.5, yellow 2.5–3, green 3–4, darker green ≥4 (same 0–6 scale as charts). */
+      function classGpaTierClass(gpa) {
+        var x = Number(gpa);
+        if (!Number.isFinite(x)) return '';
+        if (x < 2) return 'class-gpa-tier-red';
+        if (x < 2.5) return 'class-gpa-tier-orange';
+        if (x < 3) return 'class-gpa-tier-yellow';
+        if (x < 4) return 'class-gpa-tier-green';
+        return 'class-gpa-tier-green-strong';
+      }
       function renderSummaryTableFromGroups(groups, teacherUid, spotlightGroup) {
         groups = groups || [];
         if (!groups.length && !spotlightGroup) return null;
@@ -1548,9 +1779,10 @@
           el('th', {}, 'Grade'),
           el('th', {}, 'Subject'),
           el('th', { className: 'col-score' }, 'Students'),
-          el('th', { className: 'col-score' }, 'Class GPA')
+          el('th', { className: 'col-score' }, 'Class GPA'),
+          el('th', { className: 'col-actions' }, 'Students list')
         ]);
-        function makeSummaryRow(g, isSpotlight) {
+        function makeSummaryRow(g, isSpotlight, merge) {
           if (teacherUid && !g.teacher_user_id) g.teacher_user_id = teacherUid;
           var hasDetail = g.students && g.students.length > 0;
           var attrs = {
@@ -1569,44 +1801,77 @@
           } else {
             attrs.title = 'Student marks not loaded (summary only)';
           }
-          var gpaDisplay = '—';
+          var gpaNum = null;
           if (g.class_gpa != null && g.class_gpa !== '' && Number.isFinite(Number(g.class_gpa))) {
-            gpaDisplay = Number(g.class_gpa).toFixed(2);
-            if (g.class_gpa_students_count != null && Number(g.class_gpa_students_count) > 0 && g.student_count != null && Number(g.student_count) > Number(g.class_gpa_students_count)) {
-              gpaDisplay += ' (' + g.class_gpa_students_count + '/' + g.student_count + ' graded)';
-            }
+            gpaNum = Number(g.class_gpa);
           }
-          var gpaMainNum = '—';
           var gpaSubNote = '';
-          if (g.class_gpa != null && g.class_gpa !== '' && Number.isFinite(Number(g.class_gpa))) {
-            gpaMainNum = Number(g.class_gpa).toFixed(2);
-            if (g.class_gpa_students_count != null && Number(g.class_gpa_students_count) > 0 && g.student_count != null && Number(g.student_count) > Number(g.class_gpa_students_count)) {
-              gpaSubNote = g.class_gpa_students_count + '/' + g.student_count + ' graded';
-            }
+          if (gpaNum != null && g.class_gpa_students_count != null && Number(g.class_gpa_students_count) > 0 && g.student_count != null && Number(g.student_count) > Number(g.class_gpa_students_count)) {
+            gpaSubNote = g.class_gpa_students_count + '/' + g.student_count + ' graded';
           }
-          var syCell = isSpotlight
-            ? el('td', {}, [
-                el('span', { className: 'final-spotlight-ribbon' }, 'Final result'),
-                el('div', { className: 'final-spotlight-session' }, g.session_year || '—')
-              ])
-            : el('td', {}, g.session_year || '—');
-          var gpaCell = isSpotlight
-            ? el('td', { className: 'col-score' }, el('span', { className: 'final-spotlight-gpa' }, [
-                gpaMainNum,
-                gpaSubNote ? el('span', { className: 'final-spotlight-gpa-sub' }, gpaSubNote) : null
-              ].filter(Boolean)))
-            : el('td', { className: 'col-score' }, gpaDisplay);
-          return el('tr', attrs, [
-            syCell,
-            el('td', {}, normalizeTermLabel(g.term) || '—'),
-            el('td', {}, g.grade || '—'),
-            el('td', {}, g.subject || '—'),
-            el('td', { className: 'col-score' }, String(g.student_count != null ? g.student_count : ((g.students && g.students.length) || 0))),
-            gpaCell
-          ]);
+          var gpaTierClass = gpaNum != null ? classGpaTierClass(gpaNum) : '';
+          var gpaCell;
+          if (isSpotlight) {
+            gpaCell = el('td', { className: 'col-score' }, el('span', { className: 'final-spotlight-gpa' }, [
+              gpaNum == null ? '—' : el('span', { className: 'class-gpa-tier ' + gpaTierClass }, gpaNum.toFixed(2)),
+              gpaSubNote ? el('span', { className: 'final-spotlight-gpa-sub' }, gpaSubNote) : null
+            ].filter(Boolean)));
+          } else if (gpaNum == null) {
+            gpaCell = el('td', { className: 'col-score' }, '—');
+          } else {
+            var gpaBody = [el('span', { className: 'class-gpa-tier ' + gpaTierClass }, gpaNum.toFixed(2))];
+            if (gpaSubNote) gpaBody.push(el('span', { className: 'class-gpa-tier-suffix' }, ' (' + gpaSubNote + ')'));
+            gpaCell = el('td', { className: 'col-score' }, gpaBody);
+          }
+          var seeListBtn = el('button', Object.assign({
+            type: 'button',
+            className: 'student-results-see-list-btn',
+            title: hasDetail ? 'Open student list for this class' : 'Student marks not loaded (summary only)',
+            onClick: function(e) {
+              e.stopPropagation();
+              if (hasDetail) openStudentResultsGroupModal(g);
+            }
+          }, !hasDetail ? { disabled: true } : {}), 'See students list');
+          var actionsCell = el('td', { className: 'col-actions' }, seeListBtn);
+          var subjectCell = el('td', {}, g.subject || '—');
+          var countCell = el('td', { className: 'col-score' }, String(g.student_count != null ? g.student_count : ((g.students && g.students.length) || 0)));
+          if (isSpotlight) {
+            var syCell = el('td', {}, [
+              el('span', { className: 'final-spotlight-ribbon' }, 'Final result'),
+              el('div', { className: 'final-spotlight-session' }, g.session_year || '—')
+            ]);
+            return el('tr', attrs, [
+              syCell,
+              el('td', {}, termLabelForClassSummaryTable(g.term)),
+              el('td', {}, g.grade || '—'),
+              subjectCell,
+              countCell,
+              gpaCell,
+              actionsCell
+            ]);
+          }
+          var cells = [];
+          if (merge && merge.isFirst) {
+            var rs = merge.runLen > 1 ? { rowspan: merge.runLen } : {};
+            cells.push(el('td', rs, g.session_year || '—'));
+            cells.push(el('td', rs, termLabelForClassSummaryTable(g.term)));
+            cells.push(el('td', rs, g.grade || '—'));
+          }
+          cells.push(subjectCell, countCell, gpaCell, actionsCell);
+          return el('tr', attrs, cells);
         }
         var sortedGroups = sortGroupsBySessionAndTerm(groups);
-        var rows = sortedGroups.map(function(g) { return makeSummaryRow(g, false); });
+        var rows = [];
+        var gi = 0;
+        while (gi < sortedGroups.length) {
+          var mk = classResultsMergeKey(sortedGroups[gi]);
+          var runLen = 1;
+          while (gi + runLen < sortedGroups.length && classResultsMergeKey(sortedGroups[gi + runLen]) === mk) runLen++;
+          for (var r = 0; r < runLen; r++) {
+            rows.push(makeSummaryRow(sortedGroups[gi + r], false, { isFirst: r === 0, runLen: runLen }));
+          }
+          gi += runLen;
+        }
         var foot = spotlightGroup
           ? el('tfoot', { className: 'student-results-final-spotlight-foot' }, makeSummaryRow(spotlightGroup, true))
           : null;
@@ -1623,8 +1888,10 @@
         var uid = normalizeTeacherUidForApi(uidRaw);
         var mount = el('div', { className: 'student-results-mount' });
         var wrap = el('div', { className: 'panel-part student-results-panel' }, [
-          el('h3', { className: 'panel-part-title' }, 'Assigned Classes Results'),
-          mount
+          el('div', { className: 'panel-section-card' }, [
+            el('h3', { className: 'panel-part-title' }, 'Assigned Classes Results'),
+            mount
+          ])
         ]);
         if (!uid) {
           mount.appendChild(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem', margin: 0 } }, 'No teacher user id — student results cannot be loaded.'));
@@ -1806,25 +2073,30 @@
         profileWrap.appendChild(profileContent);
         var bodyEl = el('div', { className: 'panel-body' }, [
           profileWrap,
-          el('div', { className: 'panel-main-column' }, [
-            el('div', { className: 'panel-part' }, [
-              el('h3', { className: 'panel-part-title' }, 'Observation Score Trend'),
-              el('p', { className: 'panel-part-caption', style: { fontSize: '0.75rem', color: 'var(--muted)', margin: '0 0 0.5rem 0' } }, 'Date-wise by Observation_date'),
-              el('div', { className: 'panel-part-content' }, (function() {
-                var parts = [];
-                if (trendChart) parts.push(trendChart);
-                else parts.push(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data (Observation_date).'));
-                if (obsCompareTable) parts.push(obsCompareTable);
-                return parts;
-              })()),
-              el('div', { className: 'panel-part-title-row', style: { marginTop: '1.5rem' } }, [
-                el('h3', { className: 'panel-part-title' }, 'ACR-KPIs Breakdown'),
-                breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
-              ].filter(Boolean)),
-              el('div', { className: 'panel-part-content' }, [
-                renderKpiSectionBars(kpisForBreakdown)
-              ].filter(Boolean))
-            ].filter(Boolean)),
+            el('div', { className: 'panel-main-column' }, [
+            el('div', { className: 'panel-part panel-part--report-sections' }, [
+              el('div', { className: 'panel-section-card' }, [
+                el('h3', { className: 'panel-part-title' }, 'Observation Score Trend'),
+                el('p', { className: 'panel-part-caption' }, 'Date-wise by Observation_date'),
+                el('div', { className: 'panel-part-content' }, (function() {
+                  var parts = [];
+                  if (trendChart) parts.push(trendChart);
+                  else parts.push(el('p', { style: { color: 'var(--muted)', fontSize: '0.875rem' } }, 'No date-wise data (Observation_date).'));
+                  return parts;
+                })())
+              ]),
+              el('div', { className: 'panel-section-card' }, [
+                el('div', { className: 'panel-part-title-row' }, [
+                  el('h3', { className: 'panel-part-title' }, 'ACR-KPIs Breakdown'),
+                  breakdownCaption ? el('span', { className: 'panel-breakdown-caption' }, breakdownCaption) : null
+                ].filter(Boolean)),
+                el('div', { className: 'panel-part-content' }, (function() {
+                  var kpiParts = [renderKpiSectionBars(kpisForBreakdown)];
+                  if (obsCompareTable) kpiParts.push(obsCompareTable);
+                  return kpiParts;
+                })())
+              ])
+            ]),
             renderStudentResultsSection(teacher, dashPayload)
           ])
         ]);
@@ -2485,6 +2757,30 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           el('div', { className: 'obs-compare-bar-val' }, tot.totalScore.toFixed(1) + '/' + tot.totalMax + ' (' + tot.totalPct.toFixed(1) + '%)')
         ]);
       }
+      function wrapObservationCompareCollapsible(innerNodes) {
+        var inner = el('div', { className: 'obs-compare-panel-inner obs-compare-panel-hidden' }, innerNodes);
+        var btn = el('button', {
+          type: 'button',
+          className: 'obs-compare-toggle-btn',
+          'aria-expanded': 'false'
+        }, 'Show observation comparison');
+        btn.addEventListener('click', function() {
+          var hidden = inner.classList.contains('obs-compare-panel-hidden');
+          if (hidden) {
+            inner.classList.remove('obs-compare-panel-hidden');
+            btn.textContent = 'Hide observation comparison';
+            btn.setAttribute('aria-expanded', 'true');
+          } else {
+            inner.classList.add('obs-compare-panel-hidden');
+            btn.textContent = 'Show observation comparison';
+            btn.setAttribute('aria-expanded', 'false');
+          }
+        });
+        return el('div', { className: 'obs-compare-block obs-compare-collapsible' }, [
+          el('div', { className: 'obs-compare-toggle-wrap' }, [btn]),
+          inner
+        ]);
+      }
       function renderObservationBreakdownComparison(observations) {
         if (!observations || observations.length < 2) return null;
         var sorted = sortObservationsForTeacherCompare(observations);
@@ -2501,7 +2797,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
         var colsSections = sorted.map(function(obs) { return getSectionLevelData(obs.kpis || []); });
         var hasAnySection = colsSections.some(function(d) { return d && d.length; });
         if (!hasAnySection) {
-          return el('div', { className: 'obs-compare-block' }, [
+          return wrapObservationCompareCollapsible([
             el('h4', { className: 'obs-compare-heading' }, 'Compare observations (section scores)'),
             el('p', { className: 'obs-compare-sub', style: { margin: 0 } }, 'KPI breakdown per observation is not available (missing kpis on observation rows).')
           ]);
@@ -2537,7 +2833,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           totalCells.push(obsCompareBarTotalCell(colInfos[j].totals));
         });
         bodyRows.push(el('tr', { className: 'obs-compare-total-row' }, totalCells));
-        return el('div', { className: 'obs-compare-block' }, [
+        return wrapObservationCompareCollapsible([
           el('h4', { className: 'obs-compare-heading' }, 'Compare observations (section scores)'),
           el('p', { className: 'obs-compare-sub' }, 'Each column is one observation (same order as the chart above). Colored bars show score vs section max; the number below is the exact fraction. The total row uses a teal bar for overall score out of 60.'),
           el('div', { className: 'obs-compare-wrap' }, el('table', { className: 'obs-compare-table' }, [
@@ -3098,10 +3394,9 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
               el('label', {}, [el('span', {}, 'Subject'), subjSel])
             ]);
             var hero = el('div', { className: 'class-gpa-trend-hero' }, [
-              el('h2', {}, 'Assigned classes results'),
-              el('p', {}, 'With a grade selected, the chart below compares English, Urdu, and Math at Final Assessment (latest session). When both grade and subject are selected, the next chart shows class GPA by term (0–4). Click a bar or table row for student marks.')
+              el('h2', {}, 'Assigned classes results')
             ]);
-            var finalCoreChartEl = (classGpaGrade && !classGpaTrendAllGrades)
+            var finalCoreChartEl = (classGpaGrade && !classGpaTrendAllGrades && !String(classGpaSubject || '').trim())
               ? renderFinalAssessmentCoreChart(buildFinalAssessmentCoreGroups(groups, classGpaGrade), classGpaGrade)
               : null;
             var chartEl = (classGpaGrade && classGpaSubject && trendCandidates.length)
@@ -3203,30 +3498,47 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
             var titleParts = [group.session_year, normalizeTermLabel(group.term), group.grade ? 'Grade ' + group.grade : '', group.subject || ''].filter(function(x) { return x != null && String(x).trim() !== ''; });
             var title = titleParts.join(' · ') || 'Assessment results';
             var backBtn = el('button', { type: 'button', className: 'back-button', onClick: function() { history.back(); } }, '← Back');
+            var tName = (teacher.teacher_name || teacher.Teacher_Name || '—').trim() || '—';
+            var tSchool = (teacher.School || teacher.school || '').trim();
             var header = el('header', { className: 'header' }, [
               el('div', { className: 'container header-inner' }, [
-                el('div', { className: 'logo' }, [
-                  el('div', {}, [el('h1', {}, 'Assessment results'), el('p', {}, (teacher.teacher_name || teacher.Teacher_Name || '—') + ' · ' + (teacher.School || teacher.school || '—'))])
+                el('div', { className: 'logo assessment-results-logo' }, [
+                  el('div', {}, [
+                    el('h1', {}, 'Assessment results'),
+                    el('span', { className: 'assessment-header-teacher-name' }, tName),
+                    tSchool ? el('span', { className: 'assessment-header-school-line' }, tSchool) : null
+                  ].filter(Boolean))
                 ]),
                 el('nav', { className: 'nav' }, [backBtn, renderNavDropdown()])
               ])
             ]);
             var headerInfo = [
-              el('h3', { className: 'panel-part-title', style: { marginBottom: '0.35rem', border: 'none', paddingBottom: 0 } }, 'Students — ' + title),
+              el('h3', { className: 'panel-part-title assessment-students-main-heading' }, 'Students — ' + title),
               el('p', { style: { margin: 0, color: 'var(--muted)', fontSize: '0.875rem' } }, String(students.length) + ' student record(s)')
             ];
             if (group.class_gpa != null && Number.isFinite(Number(group.class_gpa))) {
               var gcn = group.class_gpa_students_count;
               var gpaSuffix = '';
               if (gcn != null && Number(gcn) > 0 && students.length > Number(gcn)) gpaSuffix = ' · ' + gcn + ' of ' + students.length + ' with letter grades';
-              headerInfo.push(el('p', { style: { margin: '0.3rem 0 0 0', color: 'var(--muted)', fontSize: '0.85rem' } }, 'Class GPA: ' + Number(group.class_gpa).toFixed(2) + ' (A1=6, A=5, … F=0)' + gpaSuffix));
+              headerInfo.push(el('div', { className: 'assessment-gpa-callout' }, [
+                el('div', { className: 'assessment-gpa-row1' }, [
+                  el('span', { className: 'assessment-gpa-label' }, 'Class GPA'),
+                  el('span', { className: 'assessment-gpa-num' }, Number(group.class_gpa).toFixed(2))
+                ]),
+                el('div', { className: 'assessment-gpa-formula' }, [
+                  'Σ grade weights ÷ all students. Weights: ',
+                  el('strong', {}, 'A1=6, A=5, B=4, C=3, D=2, E=1, F=0'),
+                  gpaSuffix ? el('span', { className: 'assessment-gpa-suffix' }, gpaSuffix) : null
+                ].filter(Boolean))
+              ]));
             }
             var table = buildStudentResultsGroupTable(group);
+            var gradeDistVisual = renderStudentGradeDistributionVisual(students);
             var main = el('main', { className: 'container', style: { paddingTop: '1rem', paddingBottom: '2rem' } }, [
               el('section', { className: 'panel-part' }, [
                 el('div', {}, headerInfo),
-                el('div', { className: 'fico-kpi-table-wrap', style: { marginTop: '0.8rem' } }, [table]),
-                el('p', { style: { margin: '0.75rem 0 0 0', fontSize: '0.8125rem', color: 'var(--muted)' } }, [el('strong', {}, 'Source: '), ' student_results_data (joined by user_id)'])
+                gradeDistVisual,
+                el('div', { className: 'fico-kpi-table-wrap', style: { marginTop: gradeDistVisual ? '1rem' : '0.8rem' } }, [table])
               ])
             ]);
             setView(el('div', {}, [header, main]));

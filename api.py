@@ -346,17 +346,26 @@ def _class_gpa_weight_from_student_row(row: dict) -> int | None:
 
 
 def _compute_class_gpa_for_rows(rows: list[dict]) -> tuple[float | None, int]:
-    """Class GPA = sum(weights) / count(students with a mapped letter grade). Returns (gpa, that count)."""
+    """Class GPA = Σ(count per letter grade × weight) / total students appeared.
+
+    Same as sum of each student's grade weight (0 if unmapped / no letter grade)
+    divided by len(rows). Students without a mappable A1–F grade count in the
+    denominator with weight 0. Returns (gpa, count with a mappable grade) for UI.
+    """
+    rows = rows or []
+    n_total = len(rows)
+    if n_total == 0:
+        return None, 0
     total_w = 0.0
-    n = 0
+    n_graded = 0
     for r in rows:
         w = _class_gpa_weight_from_student_row(r)
         if w is not None:
             total_w += float(w)
-            n += 1
-    if n == 0:
+            n_graded += 1
+    if n_graded == 0:
         return None, 0
-    return round(total_w / n, 2), n
+    return round(total_w / n_total, 2), n_graded
 
 
 def _normalize_student_id(v) -> str:
