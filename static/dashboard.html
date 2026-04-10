@@ -170,6 +170,33 @@
     .fico-kpi-table th, .fico-kpi-table td { border: 1px solid rgba(29,53,87,0.2); padding: 0.55rem 0.65rem; vertical-align: top; text-align: left; }
     .fico-kpi-table th { background: rgba(29,53,87,0.08); font-weight: 700; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); }
     .fico-kpi-table .col-score { text-align: center; white-space: nowrap; font-weight: 700; font-family: Outfit, sans-serif; }
+    .student-history-term-section { margin-top: 1.25rem; }
+    .student-history-term-section > h3 { margin-bottom: 0.75rem; }
+    .student-history-term-groups { display: flex; flex-direction: column; gap: 0.85rem; }
+    .student-history-term-panel {
+      border: 1px solid rgba(29, 53, 87, 0.16); border-radius: 12px; overflow: hidden;
+      background: var(--card-bg); box-shadow: 0 4px 16px rgba(29, 53, 87, 0.06);
+    }
+    .student-history-term-bar {
+      display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;
+      padding: 0.7rem 1rem;
+      background: linear-gradient(135deg, rgba(13, 148, 136, 0.11), rgba(69, 123, 157, 0.07));
+      border-bottom: 1px solid rgba(29, 53, 87, 0.12);
+    }
+    .student-history-term-label {
+      font-family: Outfit, sans-serif; font-weight: 800; font-size: 0.9rem; color: #1d3557; letter-spacing: -0.02em;
+      line-height: 1.35; min-width: 0;
+    }
+    .student-history-term-meta { font-size: 0.78rem; font-weight: 600; color: #457b9d; margin-top: 0.15rem; }
+    .student-history-term-toggle {
+      flex-shrink: 0; padding: 0.45rem 1rem; border-radius: 999px; font-size: 0.8125rem; font-weight: 700;
+      font-family: inherit; cursor: pointer; border: 1px solid rgba(29, 53, 87, 0.35);
+      background: rgba(69, 123, 157, 0.14); color: var(--text); transition: background 0.15s, border-color 0.15s;
+    }
+    .student-history-term-toggle:hover { background: rgba(13, 148, 136, 0.18); border-color: rgba(13, 148, 136, 0.45); }
+    .student-history-term-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .student-history-term-details { padding: 0.65rem 0.75rem 0.85rem; }
+    .student-history-term-details[hidden] { display: none !important; }
     .fico-kpi-table .col-coverage { text-align: center; white-space: nowrap; }
     .fico-kpi-coverage-ok { color: #15803d; font-weight: 600; }
     .fico-kpi-modal-foot { flex-shrink: 0; padding: 0.75rem 1.25rem; border-top: 1px solid var(--border); font-size: 0.8125rem; color: var(--muted); }
@@ -315,6 +342,46 @@
     .top100-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; }
     .top100-export-btn { padding: 0.5rem 1rem; border-radius: 10px; font-size: 0.875rem; font-weight: 600; background: linear-gradient(135deg, #457b9d, #1d3557); color: #fff; border: none; cursor: pointer; box-shadow: 0 2px 8px rgba(69,123,157,0.3); transition: transform 0.2s, box-shadow 0.2s; }
     .top100-export-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(69,123,157,0.4); }
+    .student-report-card-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0.1rem 0;
+      padding: 0.5rem 1.15rem;
+      border: none;
+      border-radius: 999px;
+      font-family: Outfit, system-ui, sans-serif;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      line-height: 1.2;
+      color: #fff;
+      cursor: pointer;
+      text-align: center;
+      white-space: nowrap;
+      background: linear-gradient(145deg, #10b981 0%, #059669 42%, #047857 100%);
+      box-shadow:
+        0 4px 14px rgba(5, 150, 105, 0.42),
+        0 1px 3px rgba(15, 23, 42, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.22);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+    .student-report-card-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.06);
+      box-shadow:
+        0 8px 22px rgba(5, 150, 105, 0.48),
+        0 2px 6px rgba(15, 23, 42, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.28);
+    }
+    .student-report-card-btn:active {
+      transform: translateY(0);
+      filter: brightness(0.98);
+    }
+    .student-report-card-btn:focus-visible {
+      outline: 2px solid #34d399;
+      outline-offset: 3px;
+    }
     .csv-export-modal-backdrop { position: fixed; inset: 0; z-index: 200; background: rgba(15, 23, 42, 0.45); display: flex; align-items: center; justify-content: center; padding: 1rem; }
     .csv-export-modal { width: min(920px, 100%); max-height: min(90vh, 720px); overflow: auto; background: var(--card-bg); border-radius: 1rem; border: 1px solid var(--border); box-shadow: 0 24px 48px rgba(0,0,0,0.2); padding: 1.25rem 1.5rem; }
     .csv-export-modal h3 { margin: 0 0 0.35rem 0; font-family: Outfit, sans-serif; font-size: 1.15rem; color: var(--text); }
@@ -1005,7 +1072,7 @@
         var theadCells = [
           el('th', {}, '#'),
           el('th', {}, 'Student'),
-          el('th', {}, 'Student ID'),
+          el('th', {}, 'Student report card'),
           el('th', { className: 'col-score' }, 'Grade'),
           el('th', { className: 'col-score' }, 'Obtained'),
           el('th', { className: 'col-score' }, 'Total'),
@@ -1028,7 +1095,14 @@
                   title: 'Open student profile'
                 }, s.student_name || '—')
               : (s.student_name || '—')),
-            el('td', {}, s.student_id != null && String(s.student_id).trim() !== '' ? String(s.student_id).trim() : '—'),
+            el('td', {}, canOpenStudent
+              ? el('button', {
+                  type: 'button',
+                  className: 'student-report-card-btn',
+                  onClick: function(e) { e.stopPropagation(); openStudentProfileFromRow(s, group); },
+                  title: 'Open student report card'
+                }, 'Click to view student report card')
+              : '—'),
             el('td', { className: 'col-score' }, (s.student_grade != null && String(s.student_grade).trim() !== '') ? String(s.student_grade).trim() : '—'),
             el('td', { className: 'col-score' }, studentResultObtainedCell(s)),
             el('td', { className: 'col-score' }, studentResultTotalCell(s)),
@@ -1421,6 +1495,29 @@
           if (gcmp !== 0) return gcmp;
           return String(a.subject || '').localeCompare(String(b.subject || ''));
         });
+      }
+      /** Group student history API rows by session year + term (preserves subject order within term). */
+      function groupStudentHistoryByTermSession(recs) {
+        var sorted = (recs || []).slice().sort(function(a, b) {
+          var sy = String(a.session_year || '').localeCompare(String(b.session_year || ''));
+          if (sy !== 0) return sy;
+          var tr = termOrderRank(a.term) - termOrderRank(b.term);
+          if (tr !== 0) return tr;
+          var gcmp = String(a.grade || '').localeCompare(String(b.grade || ''), undefined, { numeric: true });
+          if (gcmp !== 0) return gcmp;
+          return String(a.subject || '').localeCompare(String(b.subject || ''));
+        });
+        var groups = [];
+        var seen = {};
+        sorted.forEach(function(r) {
+          var k = String(r.session_year || '').trim() + '\t' + String(r.term || '').trim();
+          if (!seen[k]) {
+            seen[k] = { session_year: r.session_year, term: r.term, records: [] };
+            groups.push(seen[k]);
+          }
+          seen[k].records.push(r);
+        });
+        return groups;
       }
       function getTeacherClassGroups(teacher, dashPayload) {
         var uidRaw = teacher.user_id != null ? teacher.user_id : teacher.User_ID != null ? teacher.User_ID : '';
@@ -3032,7 +3129,7 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
           if (v) p.push('view=' + encodeURIComponent(v));
           if (currentSectorName) p.push('sector=' + encodeURIComponent(currentSectorName));
           if (currentSchoolName) p.push('school=' + encodeURIComponent(currentSchoolName));
-          if (currentTeacherId) p.push('id=' + encodeURIComponent(currentTeacherId));
+          if (currentTeacherId && currentView !== 'student') p.push('id=' + encodeURIComponent(currentTeacherId));
           if (currentView === 'classGpaTrend') {
             if (classGpaTrendAllGrades) {
               p.push('all_grades=1');
@@ -3649,19 +3746,21 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
               ]));
               var chartsSection = renderStudentSubjectChartsSection(recs);
               if (chartsSection) body.appendChild(chartsSection);
-              var head = el('tr', {}, [
-                el('th', {}, 'Session Year'),
-                el('th', {}, 'Term'),
-                el('th', {}, 'Grade'),
-                el('th', {}, 'Subject'),
-                el('th', { className: 'col-score' }, 'Obtained'),
-                el('th', { className: 'col-score' }, 'Total'),
-                el('th', { className: 'col-score' }, '%'),
-                el('th', { className: 'col-score' }, 'Student_Grade'),
-                el('th', {}, 'Result'),
-                el('th', {}, 'Teacher')
-              ]);
-              var trs = recs.map(function(r) {
+              function studentHistoryTheadRow() {
+                return el('tr', {}, [
+                  el('th', {}, 'Session Year'),
+                  el('th', {}, 'Term'),
+                  el('th', {}, 'Grade'),
+                  el('th', {}, 'Subject'),
+                  el('th', { className: 'col-score' }, 'Obtained'),
+                  el('th', { className: 'col-score' }, 'Total'),
+                  el('th', { className: 'col-score' }, '%'),
+                  el('th', { className: 'col-score' }, 'Student_Grade'),
+                  el('th', {}, 'Result'),
+                  el('th', {}, 'Teacher')
+                ]);
+              }
+              function studentHistoryDataRow(r) {
                 var tnm = r.teacher_name || (r.teacher_user_id || '—');
                 var teacherCell = r.teacher_user_id && findTeacherById(r.teacher_user_id)
                   ? el('button', { type: 'button', className: 'nav-btn', style: { padding: '0.25rem 0.6rem' }, onClick: function() { if (_acrNav.goTeacher) _acrNav.goTeacher(r.teacher_user_id); } }, tnm)
@@ -3678,9 +3777,55 @@ var x0 = padding.left + i * (sectorW + sectorGap) + barGap / 2;
                   el('td', {}, r.result || '—'),
                   el('td', {}, teacherCell)
                 ]);
+              }
+              var termGroups = groupStudentHistoryByTermSession(recs);
+              var termPanels = termGroups.map(function(g, gi) {
+                var detailId = 'student-history-term-' + gi;
+                var trs = g.records.map(studentHistoryDataRow);
+                var termTitle = normalizeTermLabel(g.term) || g.term || '—';
+                var sy = String(g.session_year || '').trim();
+                var nSub = g.records.length;
+                var firstGr = g.records[0] && g.records[0].grade != null && String(g.records[0].grade).trim() !== ''
+                  ? String(g.records[0].grade).trim()
+                  : '';
+                var labelBlock = el('div', { style: { minWidth: 0 } }, [
+                  el('div', { className: 'student-history-term-label' }, termTitle + (sy ? ' · ' + sy : '')),
+                  el('div', { className: 'student-history-term-meta' }, (firstGr ? 'Grade ' + firstGr + ' · ' : '') + nSub + ' subject row(s)')
+                ]);
+                var detailBox = el('div', { className: 'student-history-term-details', id: detailId, hidden: true }, [
+                  el('div', { className: 'fico-kpi-table-wrap' }, [
+                    el('table', { className: 'fico-kpi-table student-history-term-table' }, [
+                      el('thead', {}, studentHistoryTheadRow()),
+                      el('tbody', {}, trs)
+                    ])
+                  ])
+                ]);
+                var toggleBtn = el('button', {
+                  type: 'button',
+                  className: 'student-history-term-toggle',
+                  'aria-expanded': 'false',
+                  'aria-controls': detailId
+                }, 'See detailed result');
+                toggleBtn.addEventListener('click', function() {
+                  var isHidden = detailBox.hasAttribute('hidden');
+                  if (isHidden) {
+                    detailBox.removeAttribute('hidden');
+                    toggleBtn.setAttribute('aria-expanded', 'true');
+                    toggleBtn.textContent = 'Hide detailed result';
+                  } else {
+                    detailBox.setAttribute('hidden', '');
+                    toggleBtn.setAttribute('aria-expanded', 'false');
+                    toggleBtn.textContent = 'See detailed result';
+                  }
+                });
+                return el('div', { className: 'student-history-term-panel' }, [
+                  el('div', { className: 'student-history-term-bar' }, [labelBlock, toggleBtn]),
+                  detailBox
+                ]);
               });
-              body.appendChild(el('div', { className: 'fico-kpi-table-wrap' }, [
-                el('table', { className: 'fico-kpi-table' }, [el('thead', {}, head), el('tbody', {}, trs)])
+              body.appendChild(el('section', { className: 'student-history-term-section' }, [
+                el('h3', { className: 'panel-part-title', style: { marginBottom: '0.5rem', border: 'none', paddingBottom: 0 } }, 'Results by assessment term'),
+                el('div', { className: 'student-history-term-groups' }, termPanels)
               ]));
             })
             .catch(function() {
